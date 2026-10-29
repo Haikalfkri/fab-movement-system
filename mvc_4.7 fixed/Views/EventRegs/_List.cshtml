@@ -1,0 +1,41 @@
+﻿
+
+@model ok1.Models.EventReg
+
+<table class="table table-bordered">
+    <thead class="text-center">
+        <tr>
+            <th>Badge ID</th>
+            <th>Full Name</th>
+            <th>Department</th>
+            @if (ViewData["ShowDeleteButton"] != null && (bool)ViewData["ShowDeleteButton"])
+            {
+                <th>Action</th>
+            }
+        </tr>
+    </thead>
+    <tbody class="text-center">
+        @if (Model.EventAttendees != null && Model.EventAttendees.Any())
+        {
+            foreach (var item in Model.EventAttendees)
+            {
+                <tr>
+                    <td>@item.Attendee.EmpBadgeId</td>
+                    <td>@item.Attendee.EmpName</td>
+                    <td>@item.Attendee.EmpDept</td>
+                    @if (ViewData["ShowDeleteButton"] != null && (bool)ViewData["ShowDeleteButton"])
+                    {
+                        <td>
+                            <button class="btn btn-danger deletebtn"
+                                    data-attendee-id="@item.AttendeesId"
+                                    data-event-id="@Model.Id"
+                                    data-badge-id="@item.Attendee.EmpBadgeId">
+                                Delete
+                            </button>
+                        </td>
+                    }
+                </tr>
+            }
+        }
+    </tbody>
+</table>

@@ -1,0 +1,447 @@
+﻿@model IEnumerable<ok1.Models.User>
+@{
+    ViewBag.Title = "Weekly Report";
+}
+<h2>@ViewBag.Title</h2>
+<h4>Summary</h4>
+<hr />
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="modal" tabindex="-1" role="dialog" style="display:none; background:rgba(0,0,0,0.3); position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:30px 50px; border-radius:8px; box-shadow:0 0 10px #333;">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <span style="margin-left:10px;">Loading, please wait...</span>
+    </div>
+</div>
+
+<div class="container">@Html.Partial("_filter", Model)</div>
+
+@if (ViewBag.IsFiltered)
+{
+    <!-- Chart for LogWeek -->
+    <canvas id="logWeekChart" width="800" height="500"></canvas>
+    <br />
+    <!-- Chart for Area and Group -->
+    <canvas id="areaGroupChart" width="800" height="500"></canvas>
+    <br />
+    <!-- Chart for Area and Group -->
+    <canvas id="areaDIChart" width="800" height="500"></canvas>
+    <br />
+
+    @section Scripts {
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+        <script>
+        // Chart 2: Avg Points by LogWeek
+        const logWeekChartData = @Html.Raw(ViewBag.LogWeekChartData);
+        const logWeekLabels = logWeekChartData.map(x => x.LogWeek);
+        const logWeekData = logWeekChartData.map(x => x.AvgPoints);
+
+        const getBarColor = '#3B9B91';
+        // Function to determine point background color based on value
+        const getPointBackgroundColor = (value) => {
+            if (value <= 95) return '#BE3283'; // Red
+            if (value > 95 && value <= 98) return '#FCD442'; // Yellow
+            return ' #3B9B91'; // Green
+        };
+
+        // Generate the background colors array for the data points
+        const pointBackgroundColors = logWeekData.map(value => getPointBackgroundColor(value));
+
+        // Custom plugin to draw background color bands for the grid
+        const gridBackgroundPlugin = {
+            id: 'gridBackgroundPlugin',
+            beforeDraw: (chart) => {
+                const ctx = chart.ctx;
+                const chartArea = chart.chartArea;
+                const scales = chart.scales;
+                const yAxis = scales.y;
+
+                // Define the fixed ranges and background colors
+                const ranges = [
+                    { min: 0, max: 95, color: '#E08889' }, //Red for 0-80%
+                    { min: 95, max: 98, color: '#FFDE59' }, //Yellow for 80-90%
+                    { min: 98, max: 105, color: '#A8E590' } //Green for 90-100%
+                ];
+
+                // Draw each band
+                ranges.forEach(range => {
+                    const startY = yAxis.getPixelForValue(range.max);
+                    const endY = yAxis.getPixelForValue(range.min);
+
+                    ctx.save();
+                    ctx.fillStyle = range.color;
+                    ctx.fillRect(chartArea.left, startY, chartArea.width, endY - startY); // Draw the band
+                    ctx.restore();
+                });
+            }
+        };
+
+        const ctx2 = document.getElementById('logWeekChart').getContext('2d');
+        const logWeekChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: logWeekLabels,
+                datasets: [{
+                    label: 'Avg Points',
+                    data: logWeekData,
+                    backgroundColor: 'rgba(104, 182, 255, 0.2)',
+                    borderColor: '#08665C',
+                    borderWidth: 2,
+                    pointBackgroundColor: pointBackgroundColors,
+                    pointBorderColor: '#333',
+                    pointBorderWidth: 2,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    tooltip: {
+                        enabled: false
+                    },
+                    datalabels: {
+                        display: true,
+                        color: '#000',
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: (value) => `${value}%`
+                    },
+                    title: {
+                        display: true,
+                        text: 'Average Points by LogWeek',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        padding: {
+                            top: 20,
+                            bottom: 20
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 12
+                            },
+                            boxWidth: 15
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: true,
+                            color: 'rgba(0,0,0,0.1)' // Gridline color
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 105,
+                        ticks: {
+                            stepSize:5,
+                            callback: function (value) {
+                                return value <= 100 ? value + "%" : "";
+                            }
+                        },
+                        grid: {
+                            display: false,
+                            color: 'rgba(0,0,0,0.1)' // Gridline color
+                        },
+                        title: {
+                            display: true,
+                            text: 'Average Points (%)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuad'
+                }
+            },
+            plugins: [gridBackgroundPlugin, ChartDataLabels]
+        });
+
+    // Chart 1: Avg Points by Area and Group
+    const areaGroupChartData = @Html.Raw(ViewBag.AreaGroupChartData);
+    const areaGroupLabels = areaGroupChartData.map(x => x.AreaGroup);
+    const areaGroupData = areaGroupChartData.map(x => x.AvgPoints);
+
+    const ctx1 = document.getElementById('areaGroupChart').getContext('2d');
+    const areaGroupChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: areaGroupLabels,
+            datasets: [{
+                label : 'Avg Points by Area',
+                data: areaGroupData,
+                backgroundColor: getBarColor,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    grid: {
+                        display: false // Disable grid lines for x-axis
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 105,
+                    ticks: {
+                        stepSize: 5,
+                        callback: function(value) {
+                            return value <= 100 ? value + "%" : "";
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.parsed.y}%`
+                    }
+                },
+                datalabels: {
+                    display: true,
+                    color: '#000',
+                    font: {
+                        weight: 'bold',
+                        size: 10
+                    },
+                    anchor: 'end',
+                    align: 'top',
+                    formatter: (value) => `${value}%`
+                },
+            }
+        },
+        plugins: [gridBackgroundPlugin, ChartDataLabels]
+    });
+
+
+
+    // Chart 3: Avg Points by Area
+    const areaDetChartData = @Html.Raw(ViewBag.AreaDIChartData);
+    const areaDetLabels = areaDetChartData.map(x => x.AreaDI);
+    const areaDetData = areaDetChartData.map(x => x.TotalPoints);
+
+
+        const ctx3 = document.getElementById('areaDIChart').getContext('2d');
+        const areaDIChart = new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: areaDetLabels,
+                datasets: [{
+                    label: 'Avg Points by Area Details',
+                    data: areaDetData,
+                    backgroundColor: getBarColor,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        grid: {
+                            display: false // Disable grid lines for x-axis
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        max: 105,
+                        ticks: {
+                            stepSize: 5,
+                            callback: function (value) {
+                                return value <= 100 ? value + "%" : "";
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.parsed.y}%`
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        color: '#000',
+                        font: {
+                            weight: 'bold',
+                            size: 8
+                        },
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: (value) => `${value}%`
+                    },
+                }
+            },
+            plugins: [gridBackgroundPlugin, ChartDataLabels]
+        });
+
+        //Filter grouping
+        $(document).ready(function () {
+    // Always hide loading modal on page load or navigation
+    $('#loadingModal').hide();
+
+    window.addEventListener('pageshow', function () {
+        $('#loadingModal').hide();
+    });
+
+    $('#formFilter').submit(function () {
+        $('#loadingModal').show();
+    });
+
+    // When the Group dropdown changes
+    $('#grpFilter').change(function () {
+        var selectedGroup = $(this).val();
+        var areaDropdown = $('#areaFilter');
+        var areaDIDropdown = $('#areaDIFilter');
+
+        // Clear Area and AreaDI dropdowns
+        areaDropdown.empty().append($('<option>', { value: '', text: 'Select Area' }));
+        areaDIDropdown.empty().append($('<option>', { value: '', text: 'Select Area Detail' }));
+
+        // Always fetch areas and area details, even if group is empty
+        $.ajax({
+            url: '@Url.Action("GetAreaByGroup", "Chart")',
+            type: 'GET',
+            data: { groupName: selectedGroup },
+            dataType: 'json',
+            success: function (data) {
+                $.each(data.areaList, function (i, item) {
+                    areaDropdown.append($('<option>', {
+                        value: item,
+                        text: item
+                    }));
+                });
+                $.each(data.areaDIList, function (i, item) {
+                    areaDIDropdown.append($('<option>', {
+                        value: item,
+                        text: item
+                    }));
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error('AJAX Error:', status, error, xhr.responseText);
+                alert('An error occurred while fetching the data. Please try again.');
+            }
+        });
+    });
+
+    // When the Area dropdown changes
+    $('#areaFilter').change(function () {
+        var selectedArea = $(this).val();
+        var selectedGroup = $('#grpFilter').val();
+        var areaDIDropdown = $('#areaDIFilter');
+
+        // Clear AreaDI dropdown
+        areaDIDropdown.empty().append($('<option>', { value: '', text: 'Select Area Detail' }));
+
+        // Always fetch area details, even if area is empty
+        $.ajax({
+            url: '@Url.Action("GetAreaDetailsByArea", "Chart")',
+            type: 'GET',
+            data: { area: selectedArea, groupName: selectedGroup },
+            dataType: 'json',
+            success: function (data) {
+                $.each(data.areaDIList, function (i, item) {
+                    areaDIDropdown.append($('<option>', {
+                        value: item,
+                        text: item
+                    }));
+                });
+            },
+            error: function (xhr, status, error) {
+                console.error('AJAX Error:', status, error, xhr.responseText);
+                alert('An error occurred while fetching the data. Please try again.');
+            }
+        });
+    });
+});
+        </script>
+    }
+}
+else
+{
+    @section Scripts {
+        <script>
+            $(document).ready(function () {
+                // Always hide loading modal on page load or navigation
+                $('#loadingModal').hide();
+
+                // Also handle browser back/forward navigation
+                window.addEventListener('pageshow', function () {
+                    $('#loadingModal').hide();
+                });
+
+                // Show loading modal on filter submit
+                $('#formFilter').submit(function () {
+                    $('#loadingModal').show();
+                });
+
+                // When the Group dropdown changes
+                $('#grpFilter').change(function () {
+                    var selectedGroup = $(this).val();
+                    var areaDropdown = $('#areaFilter');
+                    var areaDIDropdown = $('#areaDIFilter');
+
+                    // Clear Area and AreaDI dropdowns
+                    areaDropdown.empty().append($('<option>', { value: '', text: 'Select Area' }));
+                    areaDIDropdown.empty().append($('<option>', { value: '', text: 'Select Area Detail' }));
+
+                    if (!selectedGroup) return;
+
+                    // AJAX call to get areas and area details
+                    $.ajax({
+                        url: '@Url.Action("GetAreaByGroup", "Chart")',
+                        type: 'GET',
+                        data: { groupName: selectedGroup },
+                        dataType: 'json',
+                        success: function (data) {
+                            // Populate Area dropdown
+                            $.each(data.areaList, function (i, item) {
+                                areaDropdown.append($('<option>', {
+                                    value: item,
+                                    text: item
+                                }));
+                            });
+
+                            // Populate AreaDI dropdown
+                            $.each(data.areaDIList, function (i, item) {
+                                areaDIDropdown.append($('<option>', {
+                                    value: item,
+                                    text: item
+                                }));
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('AJAX Error:', status, error, xhr.responseText); // Debug error
+                            alert('An error occurred while fetching the data. Please try again.');
+                        }
+                    });
+                });
+            });
+        </script>
+    }
+}

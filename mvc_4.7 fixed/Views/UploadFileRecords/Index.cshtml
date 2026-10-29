@@ -1,0 +1,63 @@
+﻿@model PagedList.IPagedList<ok1.Models.UploadFileRecord>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+@{
+    ViewBag.Title = "Upload File Records";
+    var db = new ok1.Data.ok1Context();
+    var windAcc = User.Identity.Name.ToLower();
+    var isAdmin = db.Credentials.Any(c => c.WindAcc.ToLower() == windAcc && c.isAdmin);
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+
+<br />
+
+<div class="table-container">
+    <p style="font-size:18px">
+        <strong>Total Records:</strong> @Model.TotalItemCount
+    </p>
+    <table class="table table-bordered">
+        <thead class="text-center" style="position: sticky; top: 0; background-color: #3B9B91; color: white;">
+            <tr>
+                <th>No</th>
+                <th>File Name</th>
+                <th>Upload Date</th>
+                <th>Record Count</th>
+                <th>Uploaded By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody class="text-center">
+            @{
+                int no = (Model.PageNumber - 1) * Model.PageSize + 1;
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@no</td>
+                    <td>@item.FileName</td>
+                    <td>@item.UploadDate.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@item.RecordCount</td>
+                    <td>@item.UploadedBy</td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", "UploadData", new { id = item.Id }, new { @class = "btn btn-primary" })
+                        @using (Html.BeginForm("Delete", "UploadData", FormMethod.Post, new { onsubmit = "return confirm('Are you sure you want to delete this file and all related FabMove records?');" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("id", item.Id)
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        }
+                    </td>
+                </tr>
+                no++;
+            }
+        </tbody>
+    </table>
+    <br />
+    Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+
+    @Html.PagedListPager(Model, page => Url.Action("Index",
+            new { page, searchFileName = ViewBag.CurrentFileNameFilter, searchUploader = ViewBag.CurrentUploaderFilter }))
+</div>

@@ -1,0 +1,5 @@
+.vs/
+mvc_4.7 fixed/bin/
+mvc_4.7 fixed/obj/
+*.user
+*.suo

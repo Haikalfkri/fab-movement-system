@@ -1,0 +1,287 @@
+﻿@model PagedList.IPagedList<ok1.Models.FabMove>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+<style>
+    .cell-red {
+        background-color: #ffcccc !important;
+    }
+
+    .cell-yellow {
+        background-color: #ffffcc !important;
+    }
+
+    .cell-orange {
+        background-color: #ffe5b4 !important;
+    }
+</style>
+
+@functions {
+    public string GetFabInClass(string shift, TimeSpan fabIn)
+    {
+        if (string.IsNullOrWhiteSpace(shift)) return "";
+        shift = shift.Trim().ToLower();
+        switch (shift)
+        {
+            case "morning shift": return fabIn > new TimeSpan(7, 0, 0) ? "cell-red" : "";
+            case "afternoon shift": return fabIn > new TimeSpan(15, 45, 0) ? "cell-red" : "";
+            case "night shift": return fabIn > new TimeSpan(23, 25, 0) ? "cell-red" : "";
+            case "normal shift": return fabIn > new TimeSpan(7, 45, 0) ? "cell-red" : "";
+        }
+        return "";
+    }
+    public string GetFabOutClass(string shift, string day, TimeSpan fabOut)
+    {
+        if (string.IsNullOrWhiteSpace(shift)) return "";
+        shift = shift.Trim().ToLower();
+        day = (day != null) ? day.Trim().ToLower() : "";
+        switch (shift)
+        {
+            case "morning shift": return fabOut < new TimeSpan(15, 45, 0) ? "cell-red" : "";
+            case "afternoon shift": return (fabOut >= new TimeSpan(15, 45, 0) && fabOut < new TimeSpan(23, 25, 0)) ? "cell-red" : "";
+            case "night shift": return fabOut < new TimeSpan(7, 0, 0) ? "cell-red" : "";
+            case "normal shift":
+                if (day == "friday") return fabOut < new TimeSpan(16, 15, 0) ? "cell-red" : "";
+                else return fabOut < new TimeSpan(17, 0, 0) ? "cell-red" : "";
+        }
+        return "";
+    }
+    public string GetFirstCrInClass(string shift, TimeSpan firstCrIn)
+    {
+        if (string.IsNullOrWhiteSpace(shift)) return "";
+        shift = shift.Trim().ToLower();
+        switch (shift)
+        {
+            case "morning shift": return firstCrIn > new TimeSpan(6, 55, 0) ? "cell-yellow" : "";
+            case "afternoon shift": return firstCrIn > new TimeSpan(15, 40, 0) ? "cell-yellow" : "";
+            case "night shift": return firstCrIn > new TimeSpan(23, 20, 0) ? "cell-yellow" : "";
+            case "normal shift": return firstCrIn > new TimeSpan(7, 40, 0) ? "cell-yellow" : "";
+        }
+        return "";
+    }
+    public string GetLastCrOutClass(string shift, string day, TimeSpan lastCrOut)
+    {
+        if (string.IsNullOrWhiteSpace(shift)) return "";
+        shift = shift.Trim().ToLower();
+        day = (day != null) ? day.Trim().ToLower() : "";
+        switch (shift)
+        {
+            case "morning shift": return lastCrOut < new TimeSpan(15, 45, 0) ? "cell-yellow" : "";
+            case "afternoon shift": return (lastCrOut > new TimeSpan(15, 45, 0) && lastCrOut < new TimeSpan(23, 25, 0)) ? "cell-yellow" : "";
+            case "night shift": return lastCrOut < new TimeSpan(7, 0, 0) ? "cell-yellow" : "";
+            case "normal shift":
+                if (day == "friday")
+                    return lastCrOut < new TimeSpan(16, 15, 0) ? "cell-yellow" : "";
+                else
+                    return lastCrOut < new TimeSpan(17, 0, 0) ? "cell-yellow" : "";
+        }
+        return "";
+    }
+    public string GetCrTimeClass(string timeClass)
+    {
+        return (!string.IsNullOrEmpty(timeClass) && timeClass.Trim().ToLower() == "failed") ? "cell-red" : "";
+    }
+    public string GetRowClass(string missing)
+    {
+        return string.Equals(missing, "yes", StringComparison.OrdinalIgnoreCase) ? "cell-orange" : "";
+    }
+}
+
+@{
+    ViewBag.Title = "Fab Movement Report";
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+
+@if (ViewBag.IsFiltered)
+{
+    <div class="button-container">
+        <div class="form-group">
+            <button type="button" class="btn btn-primary" style="background-color: #0A8276;" id="exportDetBtn">Export Data</button>
+
+            <form id="exportDetForm" method="get" action="@Url.Action("ExportDet")">
+                <input type="hidden" name="searchString" value="@ViewBag.SearchString" />
+                <input type="hidden" name="areaFilter" value="@ViewBag.AreaFilter" />
+                <input type="hidden" name="grpFilter" value="@ViewBag.GrpFilter" />
+                <input type="hidden" name="areaDIFilter" value="@ViewBag.AreaDIFilter" />
+                <input type="hidden" name="shiftFilter" value="@ViewBag.shiftFilter" />
+                <input type="hidden" name="statusFilter" value="@ViewBag.StatusFilter" />
+                <input type="hidden" name="from" value="@ViewBag.FromDateExport" />
+                <input type="hidden" name="to" value="@ViewBag.ToDateExport" />
+
+                @{
+                    var repeatedIds = ViewBag.RepeatedBadgeIds as string;
+                    if (!string.IsNullOrEmpty(repeatedIds))
+                    {
+                        var ids = repeatedIds.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var id in ids)
+                        {
+                            var trimmedId = id.Trim();
+                            if (!string.IsNullOrEmpty(trimmedId))
+                            {
+                                @* name="repeatedBadgeId" matches controller param *@
+                                @:<input type="hidden" name="repeatedBadgeId" value="@trimmedId" />
+                            }
+                        }
+                    }
+                }
+            </form>
+        </div>
+    </div>
+
+    if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+
+    <p style="font-size:18px;">
+        <strong>Total Records:</strong> @Model.TotalItemCount
+    </p>
+
+    <div style="overflow-x: auto; max-height: 800px;">
+        <table class="table table-bordered" style="width: 100%; table-layout: fixed;">
+            <thead class="text-center" style="position: sticky; top: 0; background: #0A8276; color: white;">
+                <tr>
+                    <th style="width: 60px">No</th>
+                    <th style="width: 100px;">Badge ID</th>
+                    <th style="width: 150px;">Name</th>
+                    <th style="width: 150px;">Department</th>
+                    <th style="width: 150px;">Designation</th>
+                    <th style="width: 100px;">Job Level</th>
+                    <th style="width: 100px;">Shift Code</th>
+                    <th style="width: 150px;">Section</th>
+                    <th style="width: 150px;">Org Unit</th>
+                    <th style="width: 150px;">Cost Center</th>
+                    <th style="width: 150px;">Level 1</th>
+                    <th style="width: 120px;">Workday</th>
+                    <th style="width: 100px;">Day</th>
+                    <th style="width: 100px;">Shift</th>
+                    <th style="width: 100px;">Fab In</th>
+                    <th style="width: 100px;">Fab Out</th>
+                    <th style="width: 150px;">First CR In</th>
+                    <th style="width: 150px;">Last CR Out</th>
+                    <th style="width: 100px;">Fab Time</th>
+                    <th style="width: 100px;">CR Time</th>
+                    <th style="width: 100px;">BR Time</th>
+                    <th style="width: 100px;">Fab Count</th>
+                    <th style="width: 100px;">CR Count</th>
+                    <th style="width: 150px;">Fab Late In</th>
+                    <th style="width: 150px;">Fab Early Out</th>
+                    <th style="width: 150px;">Public Holiday</th>
+                    <th style="width: 150px;">Workplace</th>
+                    <th style="width: 100px;">Gender</th>
+                    <th style="width: 100px;">Religion</th>
+                    <th style="width: 100px;">Friday</th>
+                    <th style="width: 100px;">Busui</th>
+                    <th style="width: 100px;">AHM</th>
+                    <th style="width: 150px;">Fab Amend</th>
+                    <th style="width: 150px;">Company Exit Permit</th>
+                    <th style="width: 150px;">Target Time</th>
+                    <th style="width: 150px;">Time Class</th>
+                </tr>
+            </thead>
+            <tbody class="text-center">
+                @{
+                    int no = (Model.PageNumber - 1) * Model.PageSize + 1;
+                }
+                @foreach (var item in Model)
+                {
+                    var rowClass = GetRowClass(item.Missing);
+                    <tr class="@rowClass">
+                        <td>@no</td>
+                        <td title="@item.EmpBadgeId">@item.EmpBadgeId</td>
+                        <td title="@item.EmpName">@item.EmpName</td>
+                        <td title="@item.EmpDept">@item.EmpDept</td>
+                        <td title="@item.Designation">@item.Designation</td>
+                        <td title="@item.JobLevel">@item.JobLevel</td>
+                        <td title="@item.ShiftCode">@item.ShiftCode</td>
+                        <td title="@item.Section">@item.Section</td>
+                        <td title="@item.OrgUnit">@item.OrgUnit</td>
+                        <td title="@item.CostCenter">@item.CostCenter</td>
+                        <td title="@item.Level1">@item.Level1</td>
+                        <td title="@item.WorkDay.ToString("yyyy-MM-dd")">@item.WorkDay.ToString("yyyy-MM-dd")</td>
+                        <td title="@item.Day">@item.Day</td>
+                        <td title="@item.Shift">@item.Shift</td>
+                        <td title="@item.FabIn" class="@GetFabInClass(item.Shift, item.FabIn)">@item.FabIn</td>
+                        <td title="@item.FabOut" class="@GetFabOutClass(item.Shift, item.Day, item.FabOut)">@item.FabOut</td>
+                        <td title="@item.FirstCrIn" class="@GetFirstCrInClass(item.Shift, item.FirstCrIn)">@item.FirstCrIn</td>
+                        <td title="@item.LastCrOut" class="@GetLastCrOutClass(item.Shift, item.Day, item.LastCrOut)">@item.LastCrOut</td>
+                        <td title="@item.FabTime">@item.FabTime</td>
+                        <td title="@item.CrTime" class="@GetCrTimeClass(item.TimeClass)">@item.CrTime</td>
+                        <td title="@item.BrTime">@item.BrTime</td>
+                        <td title="@item.FabCount">@item.FabCount</td>
+                        <td title="@item.CrCount">@item.CrCount</td>
+                        <td title="@item.FabLateIn">@item.FabLateIn</td>
+                        <td title="@item.FabEarlyOut">@item.FabEarlyOut</td>
+                        <td title="@item.PublicHoliday">@item.PublicHoliday</td>
+                        <td title="@item.Workplace">@item.Workplace</td>
+                        <td title="@item.Gender">@item.Gender</td>
+                        <td title="@item.Religion">@item.Religion</td>
+                        <td title="@item.FridayPray">@item.FridayPray</td>
+                        <td title="@item.Busui">@item.Busui</td>
+                        <td title="@item.Ahm">@item.Ahm</td>
+                        <td title="@item.Amend">@item.Amend</td>
+                        <td title="@item.ExitPermit">@item.ExitPermit</td>
+                        <td title="@item.TargetTime">@item.TargetTime</td>
+                        <td title="@item.TimeClass">@item.TimeClass</td>
+                    </tr>
+                    no++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        @{
+            var repeatedId = ViewBag.RepeatedBadgeIds as string;
+            var routeValues = new System.Web.Routing.RouteValueDictionary(new
+            {
+                searchString = ViewBag.SearchString,
+                areaFilter = ViewBag.AreaFilter,
+                grpFilter = ViewBag.GrpFilter,
+                areaDIFilter = ViewBag.AreaDIFilter,
+                shiftFilter = ViewBag.shiftFilter,
+                from = ViewBag.FromDateExport,
+                to = ViewBag.ToDateExport,
+                statusFilter = ViewBag.StatusFilter
+            });
+
+            // Add each repeatedBadgeId as separate indexed entry
+            if (!string.IsNullOrEmpty(repeatedId))
+            {
+                var ids = repeatedId.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < ids.Length; i++)
+                {
+                    routeValues[string.Format("repeatedBadgeIds[{0}]", i)] = ids[i].Trim();
+                }
+            }
+        }
+
+        @Html.PagedListPager(Model, page =>
+        {
+            routeValues["page"] = page;
+            return Url.Action("Details", routeValues);
+        })
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        Please apply a filter to view Fab Movement data.
+    </div>
+}
+
+
+@section Scripts {
+    <script>
+        // Auto-hide error alert
+        setTimeout(function () {
+            $('.alert-danger').fadeOut(500, function () { $(this).remove(); });
+        }, 1500);
+
+        document.getElementById('exportDetBtn').addEventListener('click', function () {
+            document.getElementById('exportDetForm').submit();
+        });
+    </script>
+}

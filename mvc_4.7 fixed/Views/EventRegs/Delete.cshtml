@@ -1,0 +1,81 @@
+﻿
+@model ok1.Models.EventReg
+
+@{
+    ViewData["Title"] = "Event Registration";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <!--Trainer area-->
+            <h4 class="py-2 text-decoration-underline">Trainer Information</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="text-black">Trainer ID :</label>
+                    <div class="border p-2 rounded bg-light">
+                        @Html.DisplayFor(model => model.TrainerId)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-black">Trainer Name :</label>
+                    <div class="border p-2 rounded bg-light">
+                        @Html.DisplayFor(model => model.TrainerName)
+                    </div>
+                </div>
+            </div>
+            <!--Event area-->
+            <h4 class="py-2 text-decoration-underline">Event Information</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="text-black">Event Date :</label>
+                    <div class="border p-2 rounded bg-light">
+                        @Model.EventDate.ToString("MM/dd/yyyy")
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-black">Event Name :</label>
+                    <div class="border p-2 rounded bg-light">
+                        @Html.DisplayFor(model => model.EventName)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-black">Start Time :</label>
+                    <div class="border p-2 rounded bg-light">
+                        @Html.DisplayFor(model => model.StartTime)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-black">End Time :</label>
+                    <div class="border p-2 rounded bg-light">
+                        @Html.DisplayFor(model => model.EndTime)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-black">Event Duration :</label>
+                    <div class="border p-2 rounded bg-light">
+                        @Html.DisplayFor(model => model.EventDur)
+                    </div>
+                </div>
+            </div>
+            <h4 class="text-decoration-underline">Recorded Participant </h4>
+            <div id="List">
+                @Html.Partial("_List", Model, new ViewDataDictionary { { "ShowDeleteButton", false } })
+
+            </div>
+        </div>
+    </div>
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="button-container">
+            <input type="submit" value="Delete" class="btn btn-danger" />
+            @Html.ActionLink("Back", "Index", null, new { @class = "btn btn-back" })
+        </div>
+    }
+</div>

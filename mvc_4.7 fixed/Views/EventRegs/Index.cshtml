@@ -1,0 +1,99 @@
+﻿
+@model PagedList.IPagedList<ok1.Models.EventReg>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+@{
+    ViewBag.Title = "Event Registration";
+}
+
+@{
+    var db = new ok1.Data.ok1Context();
+    var windAcc = User.Identity.Name.ToLower();
+    var isAdmin = db.Credentials.Any(c => c.WindAcc.ToLower() == windAcc && c.isAdmin);
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+
+<div class="filter-container" style="padding: 15px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+    <form method="get" asp-action="Index" style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px;">
+        <h4 style="margin: 0; color: #333;">Filter by:</h4>
+        <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+                <label for="empBadgeId" style="font-weight: bold;">Event Name:</label>
+                <input type="text" id="searchString" name="searchString" class="form-control" value="@ViewBag.CurrentBadgeFilter" style="width: 100%;" placeholder="Event name / Trainer ID here.." />
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label for="empDept" style="font-weight: bold;">Date:</label>
+                <input type="date" id="searchDate" name="searchDate" class="form-control" value="@ViewBag.CurrentDeptFilter" style="width: 100%;" />
+            </div>
+        </div>
+        <button type="submit" class="btn" style="align-self: flex-end; margin-left: auto; background-color: #0A8276; color: white;">Filter</button>
+    </form>
+</div>
+<br />
+<div class="button-container">
+    @Html.ActionLink("Create New", "Create", null, new { @class = "btn", style = "background-color: #0A8276; color: white;" })
+    @Html.ActionLink("Get Template", "Template", null, new { @class = "btn", style = "background-color: #0A8276; color: white;" })
+</div>
+<div class="button-container">
+    <form action="@Url.Action("Import", "EventRegs")" method="post" enctype="multipart/form-data" class="d-flex justify-content-end form-group">
+        <div class="col-3 mx-1">
+            <input type="file" name="file" class="form-control" />
+        </div>
+        @Html.AntiForgeryToken() <!-- Add this line to include the anti-forgery token -->
+        <button type="submit" class="btn" style="background-color: #0A8276; color: white;">Upload</button>
+    </form>
+</div>
+
+<div class="table-container">
+    <p style="font-size:18px">
+        <strong>Total Records:</strong> @Model.TotalItemCount
+    </p>
+    <table class="table table-bordered">
+        <thead class="text-center" style="position: sticky; top: 0; background-color: #0A8276; color: white;">
+            <tr>
+                <th>No</th>
+                <th>Event Name</th>
+                <th>@Html.ActionLink("Trainer Name", "Index", null, new { sortOrder = ViewBag.NameSortParm }, new { style = "color: white; text-decoration: none;" })</th>
+                <th>@Html.ActionLink("Event Date", "Index", new { sortOrder = ViewBag.DateSortParm }, new { style = "color: white; text-decoration: none;" })</th>
+                <th>Event Duration</th>
+                <th>Total Participants</th>
+                <th>Actions</th>
+            </tr>
+
+        </thead>
+        <tbody class="text-center">
+            @{
+                int no = (Model.PageNumber - 1) * Model.PageSize + 1;
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@no</td>
+                    <td>@item.EventName</td>
+                    <td>@item.TrainerName</td>
+                    <td>@item.EventDate.ToString("MM/dd/yyyy")</td>
+                    <td>@item.EventDur</td>
+                    <td>@item.TotalAttendees</td>
+                    <td>
+                        @Html.ActionLink("Edit", "Edit", new { id = item.Id }, new { @class = "btn btn-primary", style = "color: white; text-decoration: none; background-color: #0A8276; color: white;" })
+                        @Html.ActionLink("Export", "Export", new { id = item.Id }, new { @class = "btn btn-primary", style = "color: white; text-decoration: none; background-color: #0A8276; color: white;" })
+                        @if (isAdmin)
+                        {
+                            @Html.ActionLink("Delete", "Delete", new { id = item.Id }, new { @class = "btn btn-danger", style = "color: white; text-decoration: none;" })
+                        }
+                    </td>
+                </tr>
+                no++;
+            }
+        </tbody>
+    </table>
+    <br />
+    Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+
+    @Html.PagedListPager(Model, page => Url.Action("Index",
+            new { page, sortOrder = ViewBag.CurrentSort, currentFilter = ViewBag.CurrentFilter }))
+
+</div>

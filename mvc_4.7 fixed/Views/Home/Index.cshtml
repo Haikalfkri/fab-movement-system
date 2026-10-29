@@ -1,0 +1,107 @@
+﻿@model PagedList.IPagedList<ok1.Models.FabMove>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+
+@{
+    ViewBag.Title = "Fab Movement Report";
+}
+@*FAB MOVEMENT REPORT*@
+
+<h2>@ViewBag.Title</h2>
+<hr />
+<div class="container">
+    @Html.Partial("_filter", Model)
+</div>
+<br />
+<div style="overflow-y: auto; max-height: 800px;">
+    <table class="table table-bordered" style="width: 100%">
+        <thead class="text-center" style="position: sticky; top: 0; background:#6CB4AD; color: white;">
+            <tr>
+                <th>Badge ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Job Level</th>
+                <th>Shift Code</th>
+                <th>Section</th>
+                <th>Org Unit</th>
+                <th>Cost Center</th>
+                <th>Level 1</th>
+                <th>Workday</th>
+                <th>Day</th>
+                <th>Shift</th>
+                <th>Fab In</th>
+                <th>Fab Out</th>
+                <th>First CR In</th>
+                <th>Last CR Out</th>
+                <th>Fab Time</th>
+                <th>CR Time</th>
+                <th>BR Time</th>
+                <th>Fab Count</th>
+                <th>CR Count</th>
+                <th>Fab Late In</th>
+                <th>Fab Early Out</th>
+                <th>Public Holiday</th>
+                <th>Workplace</th>
+                <th>Gender</th>
+                <th>Religion</th>
+                <th>Friday</th>
+                <th>Busui</th>
+                <th>AHM</th>
+                <th>Fab Amend</th>
+                <th>Company Exit Permit</th>
+                <th>Target Time</th>
+                <th>Time Class</th>
+            </tr>
+        </thead>
+        <tbody class="text-center">
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.EmpBadgeId</td>
+                    <td>@item.EmpName</td>
+                    <td>@item.EmpDept</td>
+                    <td>@item.Designation</td>
+                    <td>@item.JobLevel</td>
+                    <td>@item.ShiftCode</td>
+                    <td>@item.Section</td>
+                    <td>@item.OrgUnit</td>
+                    <td>@item.CostCenter</td>
+                    <td>@item.Level1</td>
+                    <td>@item.WorkDay.ToString("yyyy-MM-dd")</td>
+                    <td>@item.Day</td>
+                    <td>@item.Shift</td>
+                    <td>@item.FabIn</td>
+                    <td>@item.FabOut</td>
+                    <td>@item.FirstCrIn</td>
+                    <td>@item.LastCrOut</td>
+                    <td>@item.FabTime</td>
+                    <td>@item.CrTime</td>
+                    <td>@item.BrTime</td>
+                    <td>@item.FabCount</td>
+                    <td>@item.CrCount</td>
+                    <td>@item.FabLateIn</td>
+                    <td>@item.FabEarlyOut</td>
+                    <td>@item.PublicHoliday</td>
+                    <td>@item.Workplace</td>
+                    <td>@item.Gender</td>
+                    <td>@item.Religion</td>
+                    <td>@item.FridayPray</td>
+                    <td>@item.Busui</td>
+                    <td>@item.Ahm</td>
+                    <td>@item.Amend</td>
+                    <td>@item.ExitPermit</td>
+                    <td>@item.TargetTime</td>
+                    <td>@item.TimeClass</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination">
+    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+</div>
+
+

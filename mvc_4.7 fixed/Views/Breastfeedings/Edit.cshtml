@@ -1,0 +1,102 @@
+﻿@model ok1.Models.Breastfeeding
+
+@{
+    ViewData["Title"] = "Breastfeeding Mom Data";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="default-form">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-container">
+            <div class="form-group">
+                <label>Badge ID :</label>
+                @Html.EditorFor(model => model.EmpBadgeId, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.EmpBadgeId, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                <label>Full Name :</label>
+                @Html.EditorFor(model => model.EmpName, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                @Html.ValidationMessageFor(model => model.EmpName, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                <label>Department : </label>
+                @Html.EditorFor(model => model.EmpDept, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                @Html.ValidationMessageFor(model => model.EmpDept, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="row mb-2">
+                <div class="form-group">
+                    <label>Date Of Birth :</label>
+                    @Html.TextBoxFor(model => model.DateOfBirth, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", @id = "DateOfBirth" })
+                    @Html.ValidationMessageFor(model => model.DateOfBirth, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Expired Date :</label>
+                    <input type="text" id="ExpDate" class="form-control" value="@Model.ExpDate.ToString("yyyy-MM-dd")" readonly />
+                </div>
+
+                <div class="form-group">
+                    <label>Status :</label>
+                    <!--<input type="text" id="Status" class="form-control" value="@Model.Status"/>-->
+                    @Html.DropDownListFor(model => model.Status,
+                        new SelectList(new[] {
+                            new { Value = "Active", Text = "Active" },
+                            new { Value = "Inactive", Text = "Disactivated" }
+                        }, "Value", "Text", Model.Status),
+                        new { @class = "form-control", @id = "Status"})
+                    @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="button-container">
+            <input type="submit" value="Save changes" class="btn" style="background-color: #0A8276; color: white;" />
+            @Html.ActionLink("Back", "Index", null, new { @class = "btn btn-back" })
+        </div>
+    </div>
+}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+    //Auto count expDate by +2years
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateOfBirthInput = document.getElementById("DateOfBirth");
+            const expDateInput = document.getElementById("ExpDate");
+            const statusInput = document.getElementById("Status");
+
+            // Auto-calculate ExpDate and Status when DateOfBirth changes
+            dateOfBirthInput.addEventListener("change", function () {
+                const dateOfBirth = new Date(this.value);
+                if (isNaN(dateOfBirth)) {
+                    alert("Invalid Date of Birth provided. Please select a valid date.");
+                    return;
+                }
+
+                // Calculate Expiration Date (+2 years from DOB)
+                dateOfBirth.setFullYear(dateOfBirth.getFullYear() + 2);
+                const expDate = dateOfBirth.toISOString().split("T")[0];
+                expDateInput.value = expDate;
+
+                // Determine Status based on Expiration Date
+                const currentDate = new Date();
+                // Use "Inactive" as the value, event though dropdown show "Disactivated"
+                const status = dateOfBirth > currentDate ? "Active" : "Inactive";
+                statusInput.value = status;
+
+                console.log("Calculated ExpDate:", expDate);
+                console.log("Calculated Status:", status);
+            });
+        });
+</script>
+}

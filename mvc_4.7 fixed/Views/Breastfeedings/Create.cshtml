@@ -1,0 +1,139 @@
+﻿@model ok1.Models.Breastfeeding
+
+@{
+    ViewData["Title"] = "Breastfeeding Mom Data";
+}
+
+<h1>@ViewData["Title"]</h1>
+<hr />
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="default-form">
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <div class="form-container">
+            <div class="form-group">
+                <label>Badge ID :</label>
+                <input type="text" name="EmpBadgeId" id="EmpBadgeId" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <label>Full Name :</label>
+                <input type="text" name="EmpName" id="EmpName" class="form-control" readonly/>
+            </div>
+
+            <div class="form-group">
+                <label>Department : </label>
+                <input type="text" name="EmpDept" id="EmpDept" class="form-control" readonly/>
+            </div>
+
+            <div class="row mb-2">
+                <div class="form-group">
+                    <label>Date Of Birth :</label>
+                    @Html.TextBoxFor(model => model.DateOfBirth, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", @id = "DateOfBirth" })
+                    @Html.ValidationMessageFor(model => model.DateOfBirth, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Expired Date : </label>
+                    @Html.TextBoxFor(model => model.ExpDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", @id = "ExpDate", @readonly = "readonly" })
+                    @Html.ValidationMessageFor(model => model.ExpDate, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Status :</label>
+                    @Html.TextBoxFor(model => model.Status, new { @class = "form-control", @id = "Status", @readonly = "readonly" })
+                    @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="button-container">
+            <input type="submit" value="Create" class="btn" style="background-color: #0A8276; color: white;" />
+            @Html.ActionLink("Back", "Index", null, new { @class = "btn btn-back" })
+        </div>
+    </div>
+}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("Script loaded");
+
+    const empBadgeIdInput = document.getElementById('EmpBadgeId');
+    const dateOfBirthInput = document.getElementById("DateOfBirth");
+    const expDateInput = document.getElementById("ExpDate");
+    const statusInput = document.getElementById("Status");
+
+    // Fetch employee data when EmpBadgeId changes
+    if (empBadgeIdInput) {
+        empBadgeIdInput.addEventListener('change', function () {
+            const empBadgeId = empBadgeIdInput.value.trim();
+            console.log("Sending EmpBadgeId:", empBadgeId);
+
+            if (empBadgeId) {
+                fetch('@Url.Action("GetMomData", "Breastfeedings")' + '?empBadgeId=' + encodeURIComponent(empBadgeId), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        throw new Error("Error fetching employee data: " + response.statusText);
+                    }
+                })
+                .then(data => {
+                    console.log("Response:", data);
+                    if (data && !data.error) {
+                        document.querySelector('input[name="EmpName"]').value = data.EmpName || '';
+                        document.querySelector('input[name="EmpDept"]').value = data.EmpDept || '';
+                    } else {
+                        alert("Employee not found");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Error fetching employee data");
+                });
+            }
+        });
+    }
+
+    // Auto-calculate ExpDate and Status when DateOfBirth changes
+    if (dateOfBirthInput && expDateInput && statusInput) {
+        dateOfBirthInput.addEventListener("change", function () {
+            const dateOfBirth = new Date(this.value);
+            if (isNaN(dateOfBirth)) {
+                alert("Invalid Date of Birth provided. Please select a valid date.");
+                return;
+            }
+
+            // Calculate Expiration Date (+2 years from DOB)
+            dateOfBirth.setFullYear(dateOfBirth.getFullYear() + 2);
+            const expDate = dateOfBirth.toISOString().split("T")[0];
+            expDateInput.value = expDate;
+
+            // Determine Status based on Expiration Date
+            const currentDate = new Date();
+            const status = dateOfBirth > currentDate ? "Active" : "Inactive";
+            statusInput.value = status;
+
+            console.log("Calculated ExpDate:", expDate);
+            console.log("Calculated Status:", status);
+        });
+    } else {
+        console.error("One or more required elements are missing for ExpDate and Status calculation.");
+    }
+});
+</script>
+}

@@ -1,0 +1,59 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Welcome to Data Processing System";
+}
+
+
+<div class="container mt-5">
+    <!-- Page Header Section -->
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold">Welcome to <span class="text-primary">FAB Movement Report</span></h1>
+
+        <div class="text-center mt-5">
+            <a href="@Url.Action("Index", "Users")" class="btn btn-primary btn-lg px-4">Fab Movement</a>
+        </div>
+    </div>
+
+
+    <!-- Requirements Section -->
+    <div class="row justify-content-center gx-5">
+        <!-- Card 1 -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <img src="~/Content/images/lowres-INFIN_Icon_Datacom_02.eps.png" alt="Data Requirements" class="img-fluid mb-3" style="width: 60px;">
+                    <h5 class="card-title fw-bold">Data Requirements</h5>
+                    <p class="card-text text-muted">To ensure smooth processing and optimal system performance, please make sure your data complies with the following requirements:</p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="bi bi-check-circle text-success"></i> Data must be accurate, complete, and up to date to avoid errors during processing</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Only upload files in .xlsx format; other formats are not supported</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Use the official templates provided to ensure data structure compatibility</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <img src="~/Content/images/lowres-INFIN_Icon_Datarate_02.eps.png" alt="System Runtime" class="img-fluid mb-3" style="width: 60px;">
+                    <h5 class="card-title fw-bold">System Runtime</h5>
+                    <p class="card-text text-muted">Please note that system runtime may vary depending on the data size and processing requirements. For optimal performance, consider uploading data in batches rather than all at once.</p>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="bi bi-check-circle text-success"></i> Processing >10,000 rows of data takes 10-15 minutes</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Direct upload of large datasets may result in extended processing times</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Batch uploads are recommended for better runtime efficiency</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Some features may experience slower performance due to intensive data computations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br />
+<hr />
+@*<footer class="sticky-footer">
+        <p class="fw-bold">&copy; @DateTime.Now.Year - OE Applications</p>
+    </footer>*@

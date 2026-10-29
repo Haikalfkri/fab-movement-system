@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<!-- Bootstrap CSS -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+
+
+<!-- jQuery and Bootstrap JS -->
+
+@*@{
+    var db = new ok1.Data.ok1Context();
+    var windAcc = User.Identity.Name.ToLower();
+    var isAdmin = db.Credentials.Any(c => c.WindAcc.ToLower() == windAcc && c.isAdmin);
+}*@
+
+@{
+    var db = new ok1.Data.ok1Context();
+    var windAcc = User.Identity.Name.ToLower();
+    var isAdmin = db.Credentials.Any(c => c.WindAcc.ToLower() == windAcc && c.isAdmin);
+
+    // Get the user's granted page names (if not admin)
+    List<string> grantedPages = new List<string>();
+    if (!isAdmin)
+    {
+        var cred = db.Credentials.FirstOrDefault(c => c.WindAcc.ToLower() == windAcc);
+        if (cred != null)
+        {
+            grantedPages = db.PageAccessUsers
+                .Where(p => p.CredentialId == cred.Id)
+                .Select(p => p.PageName)
+                .ToList();
+        }
+    }
+}
+
+<style>
+    ul li .nav-link {
+        font-size: 12px;
+    }
+</style>
+
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - FAB Report</title>
+    <link rel="icon" type="image/png" href="~/Content/images/infineon-logo.svg" />
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+
+
+<body>
+    <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark" style="background-color: #0A8276 !important;">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <img src="~/Content/images/IFX_LOGO_White.png" alt="logo" style="height: 40px;" />
+                <span class="navbar-brand ml-2 font-weight-bold" style="font-size: 1.2rem;">@Html.ActionLink("FAB Report", "Details", "Users", new { area = "" }, new { @class = "nav-link" })</span>
+            </div>
+            <div class="collapse navbar-collapse justify-content-center">
+                <ul class="navbar-nav @(isAdmin ? "mx-auto" : "mr-auto")">
+                    <!-- Centered navigation items -->
+                   
+                    <li>
+                        <a class="nav-link" href="@Url.Action("Index", "Users")">Personal Details</a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="@Url.Action("GetPassedChart", "Chart")">Summary Chart</a>
+                    </li>
+                    <li>
+                        <a class="nav-link" href="@Url.Action("RepeatedViolations", "Users")">Repeated last 4 weeks</a>
+                    </li>
+                    
+                    </li>
+                    @if (isAdmin || grantedPages.Contains("PublicHolidays"))
+                    {
+                        <li>@Html.ActionLink("Public Holiday", "Index", "PublicHolidays", new { area = "" }, new { @class = "nav-link" })</li>
+                    }
+
+                    @if (isAdmin || grantedPages.Contains("Breastfeedings"))
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownBreastfeeding" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Breastfeeding Mom
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownBreastfeeding">
+                                <a class="dropdown-item" href="@Url.Action("Create", "Breastfeedings")">Add New</a>
+                                <a class="dropdown-item" href="@Url.Action("Index", "Breastfeedings")">View List</a>
+                            </div>
+                        </li>
+                    }
+
+                    @if (isAdmin || grantedPages.Contains("EventRegs"))
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownEvent" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Event Registration
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownEvent">
+                                <a class="dropdown-item" href="@Url.Action("Create", "EventRegs")">Add New</a>
+                                <a class="dropdown-item" href="@Url.Action("Index", "EventRegs")">View List</a>
+                                <a class="dropdown-item" href="@Url.Action("DetailEventData", "EventRegs")">Detail Event Data</a>
+                            </div>
+                        </li>
+                    }
+
+                    @if (isAdmin || grantedPages.Contains("TargetTimes"))
+                    {
+                        <li>@Html.ActionLink("Target Time", "Index", "TargetTimes", new { area = "" }, new { @class = "nav-link" })</li>
+                    }
+
+
+                    @if (isAdmin)
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Admin
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">
+                                <a class="dropdown-item" href="@Url.Action("Index", "Credentials")">Granted Access</a>
+                                <a class="dropdown-item" href="@Url.Action("Index", "UploadData")">Upload Data FAB</a>
+                                <a class="dropdown-item" href="@Url.Action("fileRecords", "UploadData")">File Records</a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+                <span class="navbar-text ml-auto">Hello, @User.Identity.Name!</span>
+            </div>
+        </div>
+    </nav>
+
+
+    <div class="container body-content">
+        @RenderBody()
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @*@RenderSection("scripts", required: false)*@
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    @RenderSection("scripts", required: false)
+
+    @{
+        if (TempData["message"] != null)
+        {
+            <script type="text/javascript">
+                toastr.option = {
+                    "newestOnTop": false,
+                    "positionClass": "toast-center",
+                    "closeButton": true
+                };
+            $(document).ready(function() {
+                toastr.success('@TempData["message"]');
+            });
+            </script>
+        }
+        else if (TempData["AlertMsg"] != null)
+        {
+            <script>
+                toastr.option = {
+                    "newestOnTop": false,
+                    "positionClass" : "toast-center",
+                    "closeButton": true
+                };
+                $(document).ready(function () {
+                    toast.alert('@TempData["AlertMsg"]');
+
+                });
+            </script>
+        }
+        else if (TempData["ErrorMessage"] != null)
+        {
+            <script type="text/javascript">
+                toastr.option = {
+                    "newestOnTop": false,
+                    "class": error,
+                    "closeButton": true
+                };
+                $(document).ready(function () {
+                    toastr.option = {
+                        "newestOnTop": false,
+                        "class": error,
+                        "closeButton": true
+                    };
+                toastr.error('@TempData["ErrorMessage"]');
+            });
+            </script>
+        }
+    }
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+﻿<div class="row">
+    <div class="col-12">
+        <!-- Single Form for All Filters -->
+        <form id="formFilter" method="get" asp-action="Index">
+            <div class="row">
+                <!-- Filter by Date -->
+                <div class="col-md-4">
+                    <div class="filter-container">
+                        <div class="form-group">
+                            <label>From:</label>
+                            <input type="date" class="form-control" name="from" value="@ViewBag.startDate" />
+                            <label>To:</label>
+                            <input type="date" class="form-control" name="to" value="@ViewBag.endDate" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter by Area -->
+                <div class="col-md-4">
+                    <div class="filter-container">
+                        <div class="form-group">
+                            <label>Search Badge ID:</label>
+                            <input type="text" class="form-control" id="searchString" name="searchString" value="@ViewBag.searchString" placeholder="Type Badge ID here" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="filter-container">
+                        <div class="form-group">
+                            <label>Select Group:</label>
+                            @Html.DropDownList("grpFilter", (SelectList)ViewBag.grpList, "Select Group", new { @class = "form-select", id = "grpFilter" })
+
+                            <label>Select Area:</label>
+                            @Html.DropDownList("areaFilter", (SelectList)ViewBag.areaList, "Select Area", new { @class = "form-select", id = "areaFilter" })
+
+                            <label>Select Area Details:</label>
+                            @Html.DropDownList("areaDIFilter", (SelectList)ViewBag.areaDIList, "Select Area Detail", new { @class = "form-select", id = "areaDIFilter" })
+                        </div>
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary" style="background-color: #0A8276;">Filter</button>
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </form>
+    </div>
+</div>
+

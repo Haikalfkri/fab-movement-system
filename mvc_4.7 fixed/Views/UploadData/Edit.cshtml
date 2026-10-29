@@ -1,0 +1,88 @@
+﻿@model ok1.Models.EditUploadFileRecordViewModel
+@using PagedList.Mvc;
+@using PagedList;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+@{
+    ViewBag.Title = "Edit FabMove Data";
+}
+
+<h2>Edit FabMove Data for @Model.UploadFileRecord.FileName</h2>
+<p>
+    <strong>Uploaded By:</strong> @Model.UploadFileRecord.UploadedBy <br />
+    <strong>Upload Date:</strong> @Model.UploadFileRecord.UploadDate.ToString("yyyy-MM-dd HH:mm") <br />
+    <strong>Record Count:</strong> @Model.UploadFileRecord.RecordCount
+</p>
+
+@using (Html.BeginForm("Edit", "UploadData", FormMethod.Post))
+{
+    @Html.Hidden("id", Model.UploadFileRecord.Id)
+<div style="overflow-y: auto; max-height: 800px;">
+    <table class="table table-bordered table-striped">
+        <thead class="text-center" style="position: sticky; top: 0; background:#6CB4AD; color: white;">
+            <tr>
+                <th>EmpBadgeId</th>
+                <th>EmpName</th>
+                <th>EmpDept</th>
+                <th>Designation</th>
+                <th>JobLevel</th>
+                <th>ShiftCode</th>
+                <th>Section</th>
+                <th>OrgUnit</th>
+                <th>CostCenter</th>
+                <th>Level1</th>
+                <th>WorkDay</th>
+                <th>Day</th>
+                <th>Shift</th>
+                <th>FabIn</th>
+                <th>FabOut</th>
+                <th>FirstCrIn</th>
+                <th>LastCrOut</th>
+                <th>FabTime</th>
+                <th>CrTime</th>
+                <th>BrTime</th>
+                <th>FabCount</th>
+                <th>CrCount</th>
+                <th>FabLateIn</th>
+                <th>FabEarlyOut</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.FabMovesPaged.Count; i++)
+            {
+                <tr>
+                    @Html.Hidden("fabMoves[" + i + "].Id", Model.FabMovesPaged[i].Id)
+                    <td>@Html.TextBox("fabMoves[" + i + "].EmpBadgeId", Model.FabMovesPaged[i].EmpBadgeId, new { @class = "form-control", @readonly = "readonly" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].EmpName", Model.FabMovesPaged[i].EmpName, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].EmpDept", Model.FabMovesPaged[i].EmpDept, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].Designation", Model.FabMovesPaged[i].Designation, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].JobLevel", Model.FabMovesPaged[i].JobLevel, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].ShiftCode", Model.FabMovesPaged[i].ShiftCode, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].Section", Model.FabMovesPaged[i].Section, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].OrgUnit", Model.FabMovesPaged[i].OrgUnit, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].CostCenter", Model.FabMovesPaged[i].CostCenter, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].Level1", Model.FabMovesPaged[i].Level1, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].WorkDay", Model.FabMovesPaged[i].WorkDay.ToString("yyyy-MM-dd"), new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].Day", Model.FabMovesPaged[i].Day, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].Shift", Model.FabMovesPaged[i].Shift, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].FabIn", Model.FabMovesPaged[i].FabIn.ToString(), new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].FabOut", Model.FabMovesPaged[i].FabOut.ToString(), new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].FirstCrIn", Model.FabMovesPaged[i].FirstCrIn.ToString(), new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].LastCrOut", Model.FabMovesPaged[i].LastCrOut.ToString(), new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].FabTime", Model.FabMovesPaged[i].FabTime.ToString(), new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].CrTime", Model.FabMovesPaged[i].CrTime.ToString(), new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].BrTime", Model.FabMovesPaged[i].BrTime, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].FabCount", Model.FabMovesPaged[i].FabCount, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].CrCount", Model.FabMovesPaged[i].CrCount, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].FabLateIn", Model.FabMovesPaged[i].FabLateIn, new { @class = "form-control" })</td>
+                    <td>@Html.TextBox("fabMoves[" + i + "].FabEarlyOut", Model.FabMovesPaged[i].FabEarlyOut, new { @class = "form-control" })</td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-success">Save Changes</button>
+</div>
+}
+
+@Html.PagedListPager(Model.FabMovesPaged, page => Url.Action("Edit", new { id = Model.UploadFileRecord.Id, page }))   

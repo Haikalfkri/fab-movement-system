@@ -1,0 +1,177 @@
+﻿@model PagedList.IPagedList<ok1.Models.User>
+@using PagedList.Mvc;
+
+@{
+    ViewBag.Title = "Repeated Violations (Last 4 Weeks)";
+    // Get the 4 logweeks as columns
+    var logWeeks = (ViewBag.SelectedLogWeeksRange as string)
+    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+    .Select(lw => lw.Trim())
+    .ToList() ?? new List<string>();
+
+    // Group only the paged users (Model)
+    var grouped = Model.GroupBy(u => new { u.EmpBadgeId, u.EmpName, u.Area })
+        .OrderBy(g => g.Key.EmpBadgeId)
+        .ToList();
+
+    int no = (Model.PageNumber - 1) * Model.PageSize + 1;
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+<div class="container">
+    @Html.Partial("_repeatedFilter")
+</div>
+
+<div class="button-container">
+    <div class="form-group">
+        @Html.ActionLink("Export Data", "ExportRepeatedViolations", new
+        {
+            logWeek = ViewBag.SelectedLogWeek,
+            searchString = ViewBag.searchString,
+            areaFilter = ViewBag.areaFilter
+        }, new { @class = "btn btn-primary", style = "background-color: #0A8276;" })
+        <button type="button" class="btn btn-primary" style="background-color: #0A8276;" id="showDataBtn">Show Data</button>
+
+        <form id="showDataForm" method="get" action="@Url.Action("Details")">
+            <input type="hidden" name="from" value="@ViewBag.FromDateForDetails" />
+            <input type="hidden" name="to" value="@ViewBag.ToDateForDetails" />
+            <input type="hidden" name="areaFilter" value="@ViewBag.areaFilter" />
+            <input type="hidden" name="searchString" value="@ViewBag.searchString" />
+            @* Pass each repeated badge ID as separate hidden input *@
+            @if (!string.IsNullOrEmpty(ViewBag.RepeatedBadgeIds as string))
+            {
+                foreach (var badgeId in ((string)ViewBag.RepeatedBadgeIds).Split(','))
+                {
+                    if (!string.IsNullOrEmpty(badgeId.Trim()))
+                    {
+                        <input type="hidden" name="repeatedBadgeIds" value="@badgeId.Trim()" />
+                    }
+                }
+            }
+        </form>
+    </div>
+</div>
+
+<div id="showDataMessage" class="alert alert-warning mt-3" style="display:none;">
+    <p>Please input <strong>Badge ID</strong> or <strong>Area</strong> to use Show Data.</p>
+</div>
+
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+}
+
+@if (!logWeeks.Any())
+{
+    <div class="alert alert-info">No logweek data available</div>
+}
+else if (!grouped.Any())
+{
+    <div class="alert alert-info">No repeated violations found in the last 4 weeks</div>
+}
+else
+{
+    <p><strong>Total Records:</strong> @Model.TotalItemCount</p>
+    <table class="table table-bordered text-center">
+        <thead style="background-color: #0A8276; color: white;">
+            <tr>
+                <th>No</th>
+                <th>Badge ID</th>
+                <th>Name</th>
+                <th>Area</th>
+                <th>Weeks of Violation</th>
+                @foreach (var lw in logWeeks)
+                {
+                    <th>@lw</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var group in grouped)
+            {
+                <tr>
+                    <td>@no</td>
+                    <td>@group.Key.EmpBadgeId</td>
+                    <td>@group.Key.EmpName</td>
+                    <td>@group.Key.Area</td>
+                    @{
+                        int violationCount = logWeeks.Count(lw =>
+                            group.Any(u => string.Equals(u.LogWeek, lw, StringComparison.OrdinalIgnoreCase) && Math.Round(u.AvgPoints) < 100)
+                        );
+                    }
+                    <td>
+                        <span style="background-color: #e2e3e5; color: #383d41; border-radius: 4px; padding: 2px 8px;">
+                            @violationCount/@logWeeks.Count
+                        </span>
+                    </td>
+                    @foreach (var lw in logWeeks)
+                    {
+                        var user = group.FirstOrDefault(u => string.Equals(u.LogWeek, lw, StringComparison.OrdinalIgnoreCase));
+                        <td>
+                            @if (user == null)
+                            {
+                                <span style="background-color: #fff3cd; color: #856404; border-radius: 4px; padding: 2px 8px;">
+                                    No Data
+                                </span>
+                            }
+                            else if (Math.Round(user.AvgPoints) < 100)
+                            {
+                                <span style="background-color: #ffd6e0; color: #c2185b; border-radius: 4px; padding: 2px 8px;">
+                                    @string.Format("{0:0}%", Math.Round(user.AvgPoints))
+                                </span>
+                            }
+                            else if (Math.Round(user.AvgPoints) == 100)
+                            {
+                                <span style="background-color: #d4edda; color: #155724; border-radius: 4px; padding: 2px 8px;">
+                                    100%
+                                </span>
+                            }
+                        </td>
+                    }
+                </tr>
+                no++;
+            }
+        </tbody>
+    </table>
+    <div class="pagination">
+        @Html.PagedListPager(Model, page => Url.Action("RepeatedViolations", new { 
+            page,
+            logWeek = ViewBag.SelectedLogWeek,      
+            searchString = ViewBag.searchString,     
+            areaFilter = ViewBag.areaFilter          
+        }))
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Auto-hide error alert
+        setTimeout(function () {
+            $('.alert-danger').fadeOut(500, function () { $(this).remove(); });
+        }, 1500);
+
+        document.getElementById('showDataBtn').addEventListener('click', function () {
+        var searchString = '@Html.Raw(ViewBag.searchString ?? "")'.trim();
+        var areaFilter = '@Html.Raw(ViewBag.areaFilter ?? "")'.trim();
+
+        if (!searchString && !areaFilter) {
+            var msg = $('#showDataMessage');
+
+            // Show message
+            msg.stop(true, true).fadeIn(300);
+
+            // Smooth fade out after 2s
+            setTimeout(function () {
+                msg.fadeOut(500);
+            }, 2000);
+
+            return;
+        }
+
+        // ✅ Hide message if filled and submit
+        $('#showDataMessage').hide();
+        document.getElementById('showDataForm').submit();
+    });
+    </script>
+}

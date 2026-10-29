@@ -1,0 +1,35 @@
+﻿<div class="row">
+    <div class="col-12">
+        <!-- Single Form for All Filters -->
+        <form method="get" asp-action="Index">
+            <div class="row">
+                <!-- Filter by Date -->
+                <div class="col-md-4">
+                    <div class="filter-container">
+                        <div class="form-group">
+                            <label>From:</label>
+                            <input type="date" class="form-control" name="from" value="@ViewBag.startDate" />
+                            <label>To:</label>
+                            <input type="date" class="form-control" name="to" value="@ViewBag.endDate" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter by Area -->
+                <div class="col-md-4">
+                    <div class="filter-container">
+                        <div class="form-group">
+                            <label>Search Badge ID:</label>
+                            <input type="text" class="form-control" id="searchString" name="searchString" value="@ViewBag.searchString" placeholder="Type Badge ID here" />
+                            <!-- Submit Button -->
+                            <div class="button-container"><button type="submit" class="btn btn-primary">Filter</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </form>
+    </div>
+</div>
+

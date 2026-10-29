@@ -1,0 +1,50 @@
+﻿@model ok1.Models.PublicHoliday
+
+@{
+    ViewBag.Title = "Public Holiday";
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="default-form">
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <div class="form-container">
+            <div class="row mb-2">
+                <div class="form-group">
+                    <label>Start Date :</label>
+                    @Html.TextBoxFor(model => model.DateFrom, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", @id = "DateFrom" })
+                    @Html.ValidationMessageFor(model => model.DateFrom, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Until : </label>
+                    @Html.TextBoxFor(model => model.DateTo, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", @id = "DateTo" })
+                    @Html.ValidationMessageFor(model => model.DateTo, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Remark :</label>
+                    @Html.EditorFor(model => model.RemarkDate, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.RemarkDate, "", new { @class = "text-danger" })
+                </div>
+
+            </div>
+            <div class="button-container">
+                <input type="submit" value="Save changes" class="btn btn-primary" style="background-color: #0A8276;"/>
+                @Html.ActionLink("Back", "Index", null, new { @class = "btn btn-back" })
+            </div>
+        </div>
+
+    </div>
+}
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

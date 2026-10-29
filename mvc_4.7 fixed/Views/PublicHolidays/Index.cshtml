@@ -1,0 +1,129 @@
+﻿@model PagedList.IPagedList<ok1.Models.PublicHoliday>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+@{
+    ViewBag.Title = "Public Holiday";
+}
+
+@{
+    var db = new ok1.Data.ok1Context();
+    var windAcc = User.Identity.Name.ToLower();
+    var isAdmin = db.Credentials.Any(c => c.WindAcc.ToLower() == windAcc && c.isAdmin);
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+<div id="PHsData">
+    @Html.Partial("_Create", Model)
+</div>
+<hr />
+
+<div class="table-container">
+    <p style="font-size:18px;">
+        <strong>Total Records:</strong> @Model.TotalItemCount
+    </p>
+    <table class="table table-bordered">
+        <thead class="text-center" style="position: sticky; top: 0; background-color: #0A8276; color: white">
+            <tr class="text-center">
+                <th>No</th>
+                <th>From</th>
+                <th>Until</th>
+                <th>Remark</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        @{
+            int no = (Model.PageNumber - 1) * Model.PageSize + 1;
+        }
+        @foreach (var item in Model)
+        {
+            <tr class="text-center">
+                <td>@no</td>
+                <td>@item.DateFrom.ToString("yyyy-MM-dd")</td>
+                <td>@item.DateTo.ToString("yyyy-MM-dd")</td>
+                <td>@item.RemarkDate</td>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.Id }, new { @class = "btn btn-primary", style = "background-color: #0A8276;" })
+                    @if(isAdmin)
+                    {
+                        <button class="btn btn-danger deletebtn"
+                                data-event-id="@item.Id">
+                            Delete
+                        </button>
+                    }
+                    
+                </td>
+            </tr>
+            no++;
+        }
+
+    </table>
+</div>
+<div class="pagination">
+    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script>
+          //get values
+          function AutoRefresh() {
+              $.get("@Url.Action("GetFormData", "PublicHolidays")", function (data) {
+                  console.log("data :", GetFormData);
+                  $("#PHsData").html(data);
+              });
+          };
+          //DELETE
+            $(document).ready(function () {
+            // Attach the click event to elements with the class 'deletebtn'
+            $(document).on('click', '.deletebtn', function () {
+                var eventId = parseInt($(this).data('event-id'), 10); // Get the Event ID
+                var row = $(this).closest('tr'); // Get the row containing the button
+                console.log("Event ID: ", eventId, typeof eventId);
+
+                // Validate the event ID
+                if (!eventId || isNaN(eventId)) {
+                    alert("Cannot delete: Invalid event ID.");
+                    return;
+                }
+
+                // Confirm deletion
+                if (confirm("Are you sure you want to delete this?")) {
+                    // Make the AJAX request
+                    $.ajax({
+                        url: '@Url.Action("DeleteHoliday", "PublicHolidays")', // URL for deletion
+                        type: 'POST',/*
+                        headers: {
+                            "RequestVerificationToken": $('input[name="RequestVerificationToken"]').val() // CSRF token
+                        }*/
+                        contentType: "application/json;charset=UTF-8",
+                        dataType: "json",
+                        data: JSON.stringify({ id: eventId }), // Send the event ID to the server
+                        success: function (response) {
+                            console.log("Response from delete: ", response);
+
+                            // Check if the response indicates success
+                            if (response.success) {
+                                // Fade out and remove the row
+                                row.fadeOut(300, function () {
+                                    $(this).remove();
+                                });
+                            } else {
+                                // Show error message from the server
+                                alert(response.message || "Failed to delete the data.");
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            // Log and display error information
+                            console.error("AJAX error: ", status, error, xhr.responseText);
+                            alert("An error occurred while deleting the data: " + (xhr.responseText || "Please try again."));
+                        }
+                    });
+                }
+            });
+        });
+
+    </script>
+
+}

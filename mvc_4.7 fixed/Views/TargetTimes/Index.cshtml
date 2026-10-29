@@ -1,0 +1,175 @@
+﻿@model PagedList.IPagedList<ok1.Models.TargetTime>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+@{
+    ViewBag.Title = "Target Time";
+}
+
+@{
+    var db = new ok1.Data.ok1Context();
+    var windAcc = User.Identity.Name.ToLower();
+    var isAdmin = db.Credentials.Any(c => c.WindAcc.ToLower() == windAcc && c.isAdmin);
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+
+<!-- Filter Form -->
+<div class="filter-container" style="padding: 15px; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 20px;">
+    <form method="get" action="@Url.Action("Index")" style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px;">
+        <h4 style="margin: 0; color: #333;">Filter by:</h4>
+        <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 15px;">
+            <div style="flex: 1; min-width: 200px;">
+                <label for="empBadgeId" style="font-weight: bold;">Badge ID:</label>
+                <input type="text" id="empBadgeId" name="searchBadgeId" class="form-control" value="@ViewBag.CurrentBadgeFilter" style="width: 100%;" />
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label for="empDept" style="font-weight: bold;">Department:</label>
+                <input type="text" id="empDept" name="searchDept" class="form-control" value="@ViewBag.CurrentDeptFilter" style="width: 100%;" />
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self: flex-end; margin-left: auto; background-color: #0A8276; color: white;">Filter</button>
+    </form>
+</div>
+<br />
+
+<!-- Action Buttons -->
+<div class="button-container">
+    <div class="form-group">
+        @Html.ActionLink("Create New", "Create", null, new { @class = "btn btn-primary", style = "background-color: #0A8276; color: white;" })
+        @Html.ActionLink("Export Data", "Export", null, new { @class = "btn btn-primary", style = "background-color: #0A8276; color: white;" })
+        @Html.ActionLink("Download Template", "Template", null, new { @class = "btn btn-primary", style = "background-color: #0A8276; color: white;" })
+    </div>
+</div>
+
+<!-- File Upload Form -->
+<div class="button-container">
+    <form action="@Url.Action("Import", "TargetTimes")" method="post" enctype="multipart/form-data" class="d-flex justify-content-end form-group">
+        <div class="col-3 mx-1">
+            <input type="file" name="file" class="form-control" />
+        </div>
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary" style="background-color: #0A8276; color: white;">Upload</button>
+    </form>
+</div>
+
+<!-- Standalone Anti-Forgery Token for Delete AJAX -->
+@*@Html.AntiForgeryToken()
+*@
+
+<p style="font-size:18px">
+    <strong>Total Records:</strong> @Model.TotalItemCount
+</p>
+
+<!-- Data Table -->
+<div style="overflow-x: auto; overflow-y: auto; max-height: 800px;">
+    <table class="table table-bordered" style="width: 100%;">
+        <thead class="text-center" style="position: sticky; top: 0; background-color: #0A8276; color: white; z-index: 1;">
+            <tr>
+                <th>No</th>
+                <th>Badge Id</th>
+                <th>Full Name</th>
+                <th>Department</th>
+                <th>Normal Shift</th>
+                <th>Morning Shift</th>
+                <th>Afternoon Shift</th>
+                <th>Night Shift</th>
+                <th>Group Area</th>
+                <th>Area</th>
+                <th>Area Detail</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody class="text-center">
+            @{
+                int no = (Model.PageNumber - 1) * Model.PageSize + 1;
+            }
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@no</td>
+                    <td>@item.EmpBadgeId</td>
+                    <td>@item.EmpName</td>
+                    <td>@item.EmpDept</td>
+                    <td>@item.NormalShift</td>
+                    <td>@item.MorningShift</td>
+                    <td>@item.AfternoonShift</td>
+                    <td>@item.NightShift</td>
+                    <td>@item.Group</td>
+                    <td>@item.Area</td>
+                    <td>@item.AreaDI</td>
+                    <td class="d-flex gap-3">
+                        @Html.ActionLink("Edit", "Edit", new { id = item.Id }, new { @class = "btn btn-primary", style = "color: white; text-decoration: none; background-color: #0A8276;" })
+                        @if (isAdmin)
+                        {
+                            <button class="btn btn-danger deletebtn" data-event-id="@item.Id">Delete</button>
+                        }
+
+                    </td>
+                </tr>
+                no++;
+            }
+        </tbody>
+    </table>
+    <br />
+</div>
+
+<!-- Pagination -->
+<div class="pagination">
+    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Attach the click event to elements with the class 'deletebtn'
+            $(document).on('click', '.deletebtn', function () {
+                var eventId = parseInt($(this).data('event-id'), 10); // Get the Event ID
+                var row = $(this).closest('tr'); // Get the row containing the button
+                console.log("Event ID: ", eventId, typeof eventId);
+
+                // Validate the event ID
+                if (!eventId || isNaN(eventId)) {
+                    alert("Cannot delete: Invalid event ID.");
+                    return;
+                }
+
+                // Confirm deletion
+                if (confirm("Are you sure you want to delete this?")) {
+                    // Make the AJAX request
+                    $.ajax({
+                        url: '@Url.Action("DeleteTarget", "TargetTimes")', // URL for deletion
+                        type: 'POST',/*
+                        headers: {
+                            "RequestVerificationToken": $('input[name="RequestVerificationToken"]').val() // CSRF token
+                        }*/
+                        contentType: "application/json;charset=UTF-8",
+                        dataType: "json",
+                        data: JSON.stringify({ id: eventId }), // Send the event ID to the server
+                        success: function (response) {
+                            console.log("Response from delete: ", response);
+
+                            // Check if the response indicates success
+                            if (response.success) {
+                                // Fade out and remove the row
+                                row.fadeOut(300, function () {
+                                    $(this).remove();
+                                });
+                            } else {
+                                // Show error message from the server
+                                alert(response.message || "Failed to delete the data.");
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            // Log and display error information
+                            console.error("AJAX error: ", status, error, xhr.responseText);
+                            alert("An error occurred while deleting the data: " + (xhr.responseText || "Please try again."));
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

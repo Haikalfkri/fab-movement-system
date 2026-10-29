@@ -1,0 +1,104 @@
+﻿@model PagedList.IPagedList<ok1.Models.FabMove>
+@using PagedList.Mvc;
+@using PagedList;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+
+@{
+    ViewBag.Title = "Upload Data FAB Movement";
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+<div>
+    <p class="fw-bold">IMPORTANT NOTICE!</p>
+    <ul>
+        <li>Format file .xlsx</li>
+        <li>Data karyawan pada FAB harus tersedia di GMDS</li>
+    </ul>
+</div>
+<div class="button-container d-flex">
+    @Html.ActionLink("Get Template", "Template", null, new { @class = "btn btn-primary" })
+</div>
+
+<div class="button-container">
+    <form action="@Url.Action("Import", "UploadData")" method="post" enctype="multipart/form-data" class="d-flex justify-content-end form-group">
+        <div class="col-3 mx-1">
+            <input type="file" name="file" class="form-control" />
+        </div>
+        @Html.AntiForgeryToken() <!-- Add this line to include the anti-forgery token -->
+        <button type="submit" class="btn btn-primary">Import Data</button>
+    </form>
+
+
+</div>
+<div style="overflow-x: auto; overflow-y: auto; max-height: 800px;">
+    <table class="table table-bordered" style="width: 100%;">
+        <thead class="text-center" style="position: sticky; top: 0; background-color: #3B9B91; color: white;">
+            <tr>
+                <th>Badge ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Designation</th>
+                <th>Job Level</th>
+                <th>Shift Code</th>
+                <th>Section</th>
+                <th>Org Unit</th>
+                <th>Cost Center</th>
+                <th>Level 1</th>
+                <th>Workday</th>
+                <th>Day</th>
+                <th>Shift</th>
+                <th>Fab In</th>
+                <th>Fab Out</th>
+                <th>First CR In</th>
+                <th>Last CR Out</th>
+                <th>Fab Time</th>
+                <th>CR Time</th>
+                <th>BR Time</th>
+                <th>Fab Count</th>
+                <th>CR Count</th>
+                <th>Fab Late In</th>
+                <th>Fab Early Out</th>
+                @*<th>LogWeek</th>*@
+            </tr>
+        </thead>
+        <tbody class="text-center">
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.EmpBadgeId</td>
+                    <td>@item.EmpName</td>
+                    <td>@item.EmpDept</td>
+                    <td>@item.Designation</td>
+                    <td>@item.JobLevel</td>
+                    <td>@item.ShiftCode</td>
+                    <td>@item.Section</td>
+                    <td>@item.OrgUnit</td>
+                    <td>@item.CostCenter</td>
+                    <td>@item.Level1</td>
+                    <td>@item.WorkDay</td>
+                    <td>@item.Day</td>
+                    <td>@item.Shift</td>
+                    <td>@item.FabIn</td>
+                    <td>@item.FabOut</td>
+                    <td>@item.FirstCrIn</td>
+                    <td>@item.LastCrOut</td>
+                    <td>@item.FabTime</td>
+                    <td>@item.CrTime</td>
+                    <td>@item.BrTime</td>
+                    <td>@item.FabCount</td>
+                    <td>@item.CrCount</td>
+                    <td>@item.FabLateIn</td>
+                    <td>@item.FabEarlyOut</td>
+                    @*<td>@item.Logweek</td>*@
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+<div class="pagination">
+    @Html.PagedListPager(Model, page => Url.Action("Index", new { page }))
+</div>

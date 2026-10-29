@@ -1,0 +1,150 @@
+﻿@model ok1.Models.TargetTime
+
+@{
+    ViewBag.Title = "Target Time";
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <form class="default-form">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-container">
+            <h4 class="text-decoration-underline">Employee Information</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Badge ID:</label>
+                    @Html.EditorFor(model => model.EmpBadgeId, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.EmpBadgeId, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Name:</label>
+                    @Html.EditorFor(model => model.EmpName, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.EmpName, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Department:</label>
+                    @Html.EditorFor(model => model.EmpDept, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.EmpDept, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <h4 class="text-decoration-underline">Shifts Information</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Normal Shift:</label>
+                    @Html.EditorFor(model => model.NormalShift, new { htmlAttributes = new { @class = "form-control", @placeholder = "hh:mm" } })
+                    @Html.ValidationMessageFor(model => model.NormalShift, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Morning Shift:</label>
+                    @Html.EditorFor(model => model.MorningShift, new { htmlAttributes = new { @class = "form-control", @placeholder = "hh:mm" } })
+                    @Html.ValidationMessageFor(model => model.MorningShift, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Afternoon Shift:</label>
+                    @Html.EditorFor(model => model.AfternoonShift, new { htmlAttributes = new { @class = "form-control", @placeholder = "hh:mm" } })
+                    @Html.ValidationMessageFor(model => model.AfternoonShift, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Night Shift:</label>
+                    @Html.EditorFor(model => model.NightShift, new { htmlAttributes = new { @class = "form-control", @placeholder = "hh:mm" } })
+                    @Html.ValidationMessageFor(model => model.NightShift, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <h4 class="text-decoration-underline">Area Information</h4>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Group Area :</label>
+                    @Html.EditorFor(model => model.Group, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Group, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Area Detail :</label>
+                    @Html.EditorFor(model => model.AreaDI, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.AreaDI, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <label>Area : </label>
+                    @Html.EditorFor(model => model.Area, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.Area, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+
+        </div>
+        <div class="button-container">
+            <input type="submit" value="Create" class="btn btn-primary" />
+            @Html.ActionLink("Back", "Index", null, new { @class = "btn btn-back" })
+        </div>
+
+
+
+    </form>}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+    $(document).ready(function () {
+        // Attach change event to the #EmpBadgeId element
+        $("#EmpBadgeId").on("change", function () {
+            var empBadgeId = $(this).val(); // Get the badge ID
+            console.log("Sending EmpBadgeId:", empBadgeId);
+
+            // Proceed only if the badge ID is valid (not empty)
+            if (empBadgeId) {
+                // Use Url.Action to dynamically generate the server endpoint
+                var endpointUrl = '@Url.Action("GetEmpData", "TargetTimes")';
+
+                // Make an AJAX GET request to fetch employee data
+                $.ajax({
+                    url: `${endpointUrl}?empBadgeId=${empBadgeId}`, // Append the badge ID as a query parameter
+                    type: 'GET',
+                    success: function (data) {
+                        console.log("Response:", data);
+
+                        // Check if data is returned
+                        if (data) {
+                            // Populate the input fields with the employee data
+                            $('input[name="EmpName"]').val(data.EmpName);
+                            $('input[name="EmpDept"]').val(data.EmpDept);
+                            $('input[name="Group"]').val(data.Group);
+                            $('input[name="AreaDI"]').val(data.AreaDI);
+                            $('input[name="Area"]').val(data.Area);
+
+                            // Log values for debugging
+                            console.log("Name input value after setting:", $('input[name="EmpName"]').val());
+                            console.log("Department input value after setting:", $('input[name="EmpDept"]').val());
+                        } else {
+                            console.log("No data received or employee not found.");
+                            alert("No data available for the provided Employee Badge ID.");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle errors gracefully
+                        console.error("Error fetching employee data:", status, error);
+                        alert("An error occurred while fetching employee data. Please try again.");
+                    }
+                });
+            } else {
+                console.log("No EmpBadgeId provided.");
+                alert("Please enter a valid Employee Badge ID.");
+            }
+        });
+    });
+    </script>
+}

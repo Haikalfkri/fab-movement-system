@@ -1,0 +1,268 @@
+﻿@using PagedList;
+@using PagedList.Mvc;
+@model IPagedList<ok1.Models.EventDetailViewModel>
+
+@{
+    ViewBag.Title = "Event Detail Data";
+    var badgeFilterType = Request["badgeFilterType"] ?? "all";
+    var badgeIdValue = Request["badgeId"] ?? "";
+    var fromMonthYear = Request["fromMonthYear"] ?? "";
+    var toMonthYear = Request["toMonthYear"] ?? "";
+    bool hasFilter = !string.IsNullOrEmpty(fromMonthYear) || !string.IsNullOrEmpty(toMonthYear);
+}
+
+<style>
+    /* ===== Wrapper: push to bottom right ===== */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+
+    /* ===== Page items ===== */
+    .pagination-wrapper .pagination li a,
+    .pagination-wrapper .pagination li span {
+        color: #3B9B91;
+        border: 1px solid #3B9B91;
+        background-color: #ffffff;
+        padding: 5px 10px;
+        text-decoration: none;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* ===== Hover state ===== */
+    .pagination-wrapper .pagination li a:hover {
+        background-color: #3B9B91;
+        color: #ffffff;
+        border-color: #3B9B91;
+    }
+
+    /* ===== Active page ===== */
+    .pagination-wrapper .pagination li.active a,
+    .pagination-wrapper .pagination li.active span {
+        background-color: #3B9B91;
+        border-color: #3B9B91;
+        color: #ffffff;
+        font-weight: bold;
+        pointer-events: none;
+    }
+
+    /* ===== Disabled (Prev/Next when on first/last page) ===== */
+    .pagination-wrapper .pagination li.disabled a,
+    .pagination-wrapper .pagination li.disabled span {
+        color: #a8d8d4;
+        border-color: #a8d8d4;
+        background-color: #f5f5f5;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+
+    /* ===== Border radius first & last ===== */
+    .pagination-wrapper .pagination li:first-child a,
+    .pagination-wrapper .pagination li:first-child span {
+        border-radius: 4px 0 0 4px;
+    }
+
+    .pagination-wrapper .pagination li:last-child a,
+    .pagination-wrapper .pagination li:last-child span {
+        border-radius: 0 4px 4px 0;
+    }
+</style>
+
+<h2>Event Detail Data</h2>
+<hr />
+
+<!-- ===================== FILTER FORM ===================== -->
+<form method="get" id="filterForm" action="@Url.Action("DetailEventData", "EventRegs")">
+    <div class="row g-2 align-items-end mb-3">
+
+        <div class="col-auto">
+            <label class="form-label fw-semibold">
+                From <span class="text-danger">*</span>
+            </label>
+            <input type="month" name="fromMonthYear" id="fromMonthYear"
+                   class="form-control" value="@fromMonthYear" required />
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label fw-semibold">
+                To <span class="text-danger">*</span>
+            </label>
+            <input type="month" name="toMonthYear" id="toMonthYear"
+                   class="form-control" value="@toMonthYear" required />
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label fw-semibold">Type</label>
+            <select name="badgeFilterType" id="badgeFilterType" class="form-control">
+                <option value="all" @(badgeFilterType == "all" ? "selected" : "")>All Badge IDs</option>
+                <option value="specific" @(badgeFilterType == "specific" ? "selected" : "")>Specific Badge ID</option>
+            </select>
+        </div>
+
+        <div class="col-auto" id="badgeIdWrapper"
+             style="display:@(badgeFilterType == "specific" ? "block" : "none");">
+            <label class="form-label fw-semibold">Badge ID</label>
+            <input type="text" name="badgeId" id="badgeIdField"
+                   class="form-control" placeholder="Input Badge Id"
+                   value="@badgeIdValue" />
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn" style="background-color: #0A8276; color: white;">
+                Show Data
+            </button>
+            <button type="button" id="exportBtn" class="btn" style="background-color: #0A8276; color: white;">
+                Export Data
+            </button>
+        </div>
+
+    </div>
+</form>
+
+<!-- ===================== VALIDATION ERRORS ===================== -->
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger mt-4">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div><i class="fa fa-exclamation-triangle"></i> @err.ErrorMessage</div>
+        }
+    </div>
+}
+
+<!-- ===================== RESULTS ===================== -->
+@if (!hasFilter)
+{
+    <div class="alert alert-secondary mt-4">
+        <i class="fa fa-info-circle"></i>
+        Please select <strong>From</strong> and <strong>To</strong> month to load data.
+    </div>
+}
+else if (ViewData.ModelState.IsValid && (Model == null || !Model.Any()))
+{
+    <div class="alert alert-info">
+        <i class="fa fa-search"></i>
+        No data found for the selected filters.
+    </div>
+}
+else if (Model != null && Model.Any())
+{
+    <!-- Result Info -->
+    <div class="mb-2 mt-4 text-muted">
+        Showing
+        <strong>@Model.FirstItemOnPage</strong> - <strong>@Model.LastItemOnPage</strong>
+        of <strong>@Model.TotalItemCount</strong> record(s)
+        — Page <strong>@Model.PageNumber</strong> of <strong>@Model.PageCount</strong>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table">
+            <thead style="position: sticky; top: 0; background-color: #3B9B91; color: white;">
+                <tr>
+                    <th>No</th>
+                    <th>Badge ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Event Name</th>
+                    <th>Event Date</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int rowNum = (Model.PageNumber - 1) * Model.PageSize + 1; }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@rowNum</td>
+                        <td>@item.BadgeId</td>
+                        <td>@item.EmpName</td>
+                        <td>@item.EmpDept</td>
+                        <td>@item.EventName</td>
+                        <td>@item.EventDate.ToString("dd MMM yyyy")</td>
+                        <td>@item.MonthName</td>
+                        <td>@item.Year</td>
+                        <td>@item.EventDuration</td>
+                    </tr>
+                    rowNum++;
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===================== PAGEDLIST PAGINATION ===================== -->
+    <div class="pagination-wrapper">
+        @Html.PagedListPager(Model, page => Url.Action("DetailEventData", "EventRegs", new
+        {
+            page,
+            fromMonthYear,
+            toMonthYear,
+            badgeFilterType,
+            badgeId = badgeIdValue
+        }), 
+        new PagedListRenderOptions
+        {
+            LiElementClasses = new[] { "page-item" },
+            UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" }
+        })
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById('badgeFilterType').addEventListener('change', function () {
+            var wrapper = document.getElementById('badgeIdWrapper');
+            var field = document.getElementById('badgeIdField');
+            if (this.value === 'specific') {
+                wrapper.style.display = 'block';
+                field.setAttribute('required', 'required');
+            } else {
+                wrapper.style.display = 'none';
+                field.removeAttribute('required');
+                field.value = '';
+            }
+        });
+
+        // ===== Export Button =====
+        document.getElementById('exportBtn').addEventListener('click', function () {
+            var fromMonthYear   = document.getElementById('fromMonthYear').value;
+            var toMonthYear     = document.getElementById('toMonthYear').value;
+            var badgeFilterType = document.getElementById('badgeFilterType').value;
+            var badgeId         = document.getElementById('badgeIdField').value;
+
+            // Validate before export
+            if (!fromMonthYear || !toMonthYear) {
+                alert('Please select From and To Month/Year before exporting.');
+                return;
+            }
+
+            // Build export URL with current filter values
+            var url = '@Url.Action("ExportDetailEventData", "EventRegs")'
+                + '?fromMonthYear=' + encodeURIComponent(fromMonthYear)
+                + '&toMonthYear='   + encodeURIComponent(toMonthYear)
+                + '&badgeFilterType=' + encodeURIComponent(badgeFilterType)
+                + '&badgeId='       + encodeURIComponent(badgeId);
+
+            // Trigger download
+            window.location.href = url;
+        });
+
+        // ===== Show/hide badge id input =====
+        document.getElementById('badgeFilterType').addEventListener('change', function () {
+            var wrapper = document.getElementById('badgeIdWrapper');
+            var field   = document.getElementById('badgeIdField');
+            if (this.value === 'specific') {
+                wrapper.style.display = 'block';
+                field.setAttribute('required', 'required');
+            } else {
+                wrapper.style.display = 'none';
+                field.removeAttribute('required');
+                field.value = '';
+            }
+        });
+    </script>
+}

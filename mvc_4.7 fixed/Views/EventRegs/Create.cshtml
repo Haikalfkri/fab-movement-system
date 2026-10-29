@@ -1,0 +1,367 @@
+﻿
+@model ok1.Models.EventReg
+
+@{
+    ViewBag.Title = "Event Registration";
+}
+
+<h2>@ViewBag.Title</h2>
+<hr />
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div id="autosave-toast" style="
+        display:none;
+        position:fixed;
+        top:30px;
+        right:30px;
+        z-index:9999;
+        background:#3B9B91;
+        color:#fff;
+        padding:16px 32px;
+        border-radius:6px;
+        box-shadow:0 2px 8px rgba(0,0,0,0.15);
+        font-size:16px;
+        font-weight:bold;
+        opacity:0.95;
+        transition: opacity 0.3s;
+    ">
+        Save successfully!
+    </div>
+
+    <div class="default-form">
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <h4 class="text-decoration-underline">Trainer Information</h4>
+        <div class="form-grid">
+            <input type="hidden" name="Id" id="EventId" value="@Model.Id" />
+            <div class="form-group">
+                <label>Trainer Id :</label>
+                <input type="text" name="TrainerId" id="TrainerId" class="form-control" autocomplete="off" />
+            </div>
+            <div class="form-group">
+                <label>Trainer Name :</label>
+                <input type="text" name="TrainerName" id="TrainerName" class="form-control" readonly autocomplete="off" />
+            </div>
+        </div>
+
+        <h4 class="text-decoration-underline">Event Information</h4>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Event Date :</label>
+                <input type="date" name="EventDate" id="EventDate" class="form-control" autocomplete="off" />
+            </div>
+            <div class="form-group">
+                <label>Event Name :</label>
+                <input type="text" name="EventName" id="EventName" class="form-control" autocomplete="off" />
+            </div>
+            <div class="form-group">
+                <label>Start Time :</label>
+                <input type="time" name="StartTime" id="StartTime" class="form-control" autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+                <label>End Time :</label>
+                <input type="time" name="EndTime" id="EndTime" class="form-control" autocomplete="off" />
+            </div>
+
+            <div class="form-group">
+                <label>Event Duration :</label>
+                <input type="text" name="EventDur" id="EventDur" class="form-control" readonly autocomplete="off" />
+
+            </div>
+        </div>
+
+        <h4 class="text-decoration-underline">Participant Information</h4>
+        <br />
+        <div id="participantContainer">
+            <div class="participant-row">
+                <table class="table table-bordered">
+                    <thead class="text-center">
+                        <tr>
+                            <th>Badge ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                        </tr>
+                    </thead>
+                    <tbody id="participantTableBody">
+                        <tr class="participant-row">
+                            <td>
+                                <input type="text" name="EmpBadgeId[]" class="form-control" onblur="fetchUserData(this)" autocomplete="off" />
+                            </td>
+                            <td><input type="text" name="EmpName[]" class="form-control" readonly autocomplete="off" /></td>
+                            <td><input type="text" name="EmpDept[]" class="form-control" readonly autocomplete="off" /></td>
+
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="button-container mt-lg-5">
+            <input type="submit" value="Create" class="btn" style="display: none;" />
+            @Html.ActionLink("Finish", "Index", null, new { @class = "btn", style = "background-color: #0A8276; color: white;" })
+        </div>
+    </div>
+}
+
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+    //AUTO FILL TRAINER
+    $(document).ready(function () {
+        // Attach change event to the #EmpBadgeId element
+        $("#TrainerId").on("change", function () {
+            var trainerId = $(this).val(); // Get the badge ID
+            console.log("Sending EmpBadgeId:", trainerId);
+
+            // Proceed only if the badge ID is valid (not empty)
+            if (trainerId) {
+                // Use Url.Action to dynamically generate the server endpoint
+                var endpointUrl = '@Url.Action("GetTrainerData", "EventRegs")';
+
+                // Make an AJAX GET request to fetch employee data
+                $.ajax({
+                    url: `${endpointUrl}?trainerId=${trainerId}`, // Append the badge ID as a query parameter
+                    type: 'GET',
+                    success: function (data) {
+                        console.log("Response:", data);
+
+                        // Check if data is returned
+                        if (data) {
+                            // Populate the input fields with the employee data
+                            $('input[name="TrainerName"]').val(data.TrainerName);
+                            // Log values for debugging
+                            console.log("Name input value after setting:", $('input[name="TrainerName"]').val());
+                        } else {
+                            console.log("No data received or employee not found.");
+                            alert("No data available for the provided Employee Badge ID.");
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // Handle errors gracefully
+                        console.error("Error fetching employee data:", status, error);
+                        alert("Trainer Badge ID Not Found");
+                    }
+                });
+            } else {
+                console.log("No EmpBadgeId provided.");
+                alert("Please enter a valid Employee Badge ID.");
+            }
+        });
+    });
+
+    //Auto Count Event Duration
+    function countDuration() {
+        let StartTime = document.getElementById("StartTime").value;
+        let EndTime = document.getElementById("EndTime").value;
+        let durationField = document.getElementById("EventDur");
+
+
+        if (StartTime && EndTime) {
+            //split hour and minutes
+            let start = new Date(`1970-01-01T${StartTime}:00`);
+            let end = new Date(`1970-01-01T${EndTime}:00`);
+
+            if (end > start) {
+                let diffMs = end - start;
+                let diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                let diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                let diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+                let formattedDuration = [
+                    diffHours.toString().padStart(2, '0'),
+                    diffMinutes.toString().padStart(2, '0'),
+                    diffSeconds.toString().padStart(2, '0')
+                ].join(':');
+
+                durationField.value = formattedDuration;
+
+            } else {
+
+                durationField.value = "Invalid duration";
+            }
+        }
+    }
+
+    document.getElementById("StartTime").addEventListener("change", countDuration);
+    document.getElementById("EndTime").addEventListener("change", countDuration);
+
+    //GET form participant list data
+    function AutoRefresh() {
+      $.get("@Url.Action("GetParticipantData", "EventRegs")", function (data) {
+          console.log("data :", GetParticipantData);
+          $("#List").html(data);
+      });
+    };
+
+    function fetchUserData(input) {
+        let empId = input.value.trim();
+        let row = input.closest('tr');
+
+        // Prevent duplicate badge IDs
+        let existingRows = document.querySelectorAll('input[name="EmpBadgeId[]"]');
+        let isDuplicate = Array.from(existingRows).some(existingInput =>
+            existingInput.value.trim() === empId && existingInput !== input
+        );
+
+        if (isDuplicate) {
+            alert("This Employee Badge ID is already listed in the table.");
+            input.value = '';
+            row.querySelector('input[name="EmpName[]"]').value = '';
+            row.querySelector('input[name="EmpDept[]"]').value = '';
+            return;
+        }
+
+        if (empId) {
+            let endpointUrl = '@Url.Action("GetParticipantData", "EventRegs")';
+
+            $.ajax({
+                url: `${endpointUrl}?empId=${empId}`,
+                type: "GET",
+                success: function (data) {
+                    if (data) {
+                        row.querySelector('input[name="EmpName[]"]').value = data.EmpName;
+                        row.querySelector('input[name="EmpDept[]"]').value = data.EmpDept;
+
+                        // If this is the last row and all fields are filled, add a new row and focus it
+                        addParticipant();
+                    } else {
+                        alert("Cannot find data");
+                        input.value = '';
+                        row.querySelector('input[name="EmpName[]"]').value = '';
+                        row.querySelector('input[name="EmpDept[]"]').value = '';
+                    }
+                },
+                error: function () {
+                    alert("Badge ID Not Found");
+                    input.value = '';
+                    row.querySelector('input[name="EmpName[]"]').value = '';
+                    row.querySelector('input[name="EmpDept[]"]').value = '';
+                }
+            });
+        }
+    }
+
+    function addParticipant() {
+        let tbody = document.getElementById("participantTableBody");
+        let rows = tbody.querySelectorAll("tr");
+        let lastRow = rows[rows.length - 1];
+        let inputs = lastRow.querySelectorAll("input");
+        let allFilled = Array.from(inputs).every(input => input.value.trim() !== "");
+
+        // Only add a new row if the last row is fully filled
+        if (allFilled) {
+            let row = document.createElement("tr");
+            row.classList.add("participant-row");
+            row.innerHTML = `
+                <td>
+                    <input type="text" name="EmpBadgeId[]" class="form-control" onblur="fetchUserData(this)" autocomplete="off" />
+                </td>
+                <td><input type="text" name="EmpName[]" class="form-control" readonly autocomplete="off" /></td>
+                <td><input type="text" name="EmpDept[]" class="form-control" readonly autocomplete="off" /></td>
+            `;
+            tbody.appendChild(row);
+
+            // Focus the new badge input for fast scanning
+            let newEmpBadgeInput = row.querySelector('input[name="EmpBadgeId[]"]');
+            if (newEmpBadgeInput) {
+                newEmpBadgeInput.focus();
+            }
+        }
+    }
+
+    //debounce
+    let scanTimeout;
+
+    document.addEventListener('keydown', function (e) {
+        let activeElement = document.activeElement;
+
+        if (activeElement && activeElement.name === "EmpBadgeId[]" && e.key === "Enter") {
+            e.preventDefault(); // Cegah aksi default
+
+            // Gunakan debounce untuk mengatur jeda pemrosesan
+            clearTimeout(scanTimeout);
+            scanTimeout = setTimeout(() => {
+                fetchUserData(activeElement, true);
+            }, 200); // Sesuaikan waktu debounce sesuai kebutuhan
+        }
+    });
+
+
+    function removeParticipant() {
+        $(button).closest(".participant-row").remove();
+    }
+
+
+    function showAutoSaveToast(message) {
+        var toast = document.getElementById("autosave-toast");
+        toast.textContent = message || "Auto-saved successfully!";
+        toast.style.display = "block";
+        toast.style.opacity = "0.95";
+        // Hide after 1 seconds
+        setTimeout(function () {
+            toast.style.opacity = "0";
+            setTimeout(function () {
+                toast.style.display = "none";
+            }, 300);
+        }, 1000);
+    }
+
+    function autoSaveForm() {
+        // Only auto-save if required fields are filled
+        var trainerId = $("#TrainerId").val().trim();
+        var trainerName = $("#TrainerName").val().trim();
+        var eventDate = $("#EventDate").val().trim();
+        var eventName = $("#EventName").val().trim();
+
+        if (!trainerId || !trainerName || !eventDate || !eventName) {
+            // Don't auto-save if any required field is empty
+            return;
+        }
+
+        const formData = $("form").serialize();
+        $.ajax({
+            url: '@Url.Action("AutoSave", "EventRegs")',
+            type: 'POST',
+            data: formData,
+            success: function (response) {
+                if (response && response.success) {
+                    showAutoSaveToast(response.message || "Auto-saved successfully!")
+                    // Update the hidden ID field if returned
+                    if (response.eventId) {
+                        $("#EventId").val(response.eventId);
+                    }
+                }
+                console.log("Auto-save successfull:", response.message)
+            },
+            error: function (xhr, status, error) {
+                console.error("Auto-save failed.", error)
+            }
+        });
+    }
+
+
+    $(document).ready(function () {
+        // Trigger auto-save when any input field in the form changes
+        $("form").on("change", "input, select, textarea", function () {
+            autoSaveForm();
+        });
+
+        // Trigger auto-save when a new participant row is added
+        $("#participantTableBody").on("blur", "input[name='EmpBadgeId[]']", function () {
+            autoSaveForm();
+        });
+
+        // Trigger auto-save when the Start Time or End Time changes
+        $("#StartTime, #EndTime").on("change", function () {
+            autoSaveForm();
+        });
+    });
+
+    </script>
+}

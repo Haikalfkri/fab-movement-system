@@ -1,0 +1,285 @@
+﻿@model PagedList.IPagedList<ok1.Models.User>
+@using PagedList.Mvc;
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text" />
+@{
+    ViewBag.Title = "Weekly Report";
+    bool isAdmin = ViewBag.IsAdmin != null && (bool)ViewBag.IsAdmin;
+    bool isManager = ViewBag.IsManager != null && (bool)ViewBag.IsManager;
+    bool isPrivilegedUser = ViewBag.IsPrivilegedUser != null && (bool)ViewBag.IsPrivilegedUser;
+}
+<h2>@ViewBag.Title</h2>
+<h4>Personal Details</h4>
+<hr />
+<div class="container">@Html.Partial("_filter", Model)</div>
+<div class="button-container">
+    <div class="form-group">
+        @Html.ActionLink("Export Data", "Export", new
+        {
+            searchString = Request.QueryString["searchString"],
+            areaFilter = Request.QueryString["areaFilter"],
+            grpFilter = Request.QueryString["grpFilter"],
+            areaDIFilter = Request.QueryString["areaDIFilter"],
+            shiftFilter = Request.QueryString["shiftFilter"],
+            statusFilter = Request.QueryString["statusFilter"],
+            from = Request.QueryString["from"],
+            to = Request.QueryString["to"],
+        }, new { @class = "btn btn-primary", style = "background-color: #0A8276;" })
+        @Html.ActionLink("Show Data", "Details", new
+        {
+            searchString = Request.QueryString["searchString"],
+            areaFilter = Request.QueryString["areaFilter"],
+            grpFilter = Request.QueryString["grpFilter"],
+            areaDIFilter = Request.QueryString["areaDIFilter"],
+            shiftFilter = Request.QueryString["shiftFilter"],
+            from = Request.QueryString["from"],
+            to = Request.QueryString["to"],
+            statusFilter = Request.QueryString["statusFilter"]
+        }, new { @class = "btn btn-primary", style = "background-color: #0A8276;", id = "showDataBtn" })
+    </div>
+</div>
+@if (ViewBag.IsFiltered)
+{
+    if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+    }
+    <p style="font-size:18px;">
+        <strong>Total Records:</strong> @Model.TotalItemCount
+    </p>
+    <table class="table table-bordered text-center">
+        <thead class="text-center" style="position: sticky; top: 0; background-color: #0A8276; color: white">
+            <tr>
+                <th>No</th>
+                <th>Badge ID</th>
+                <th>Full Name</th>
+                <th>Department</th>
+                <th>Group</th>
+                <th>Area</th>
+                <th>Area Detail</th>
+                <th>Log Week</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        @{
+            int no = (Model.PageNumber - 1) * Model.PageSize + 1;
+        }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@no</td>
+                <td>@item.EmpBadgeId</td>
+                <td>@item.EmpName</td>
+                <td>@item.EmpDept</td>
+                <td>@item.Group</td>
+                <td>@item.Area</td>
+                <td>@item.AreaDI</td>
+                <td>@item.LogWeek</td>
+                <td>@item.AvgPoints.ToString("F2")%</td>
+            </tr>
+            no++;
+        }
+    </table>
+    <div class="pagination">
+        @Html.PagedListPager(Model, page => Url.Action("Index", new
+        {
+            page,
+            sortOrder = ViewBag.SortOrder,
+            searchString = ViewBag.SearchString,
+            areaFilter = ViewBag.AreaFilter,
+            grpFilter = ViewBag.GrpFilter,
+            areaDIFilter = ViewBag.AreaDIFilter,
+            shiftFilter = ViewBag.shiftFilter,
+            from = ViewBag.startDate,
+            to = ViewBag.endDate,
+            statusFilter = ViewBag.StatusFilter
+        }))
+    </div>
+}
+else
+{
+}
+<!-- Loading Modal -->
+<div id="loadingModal" class="modal" tabindex="-1" role="dialog" style="display:none; background:rgba(0,0,0,0.3); position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:30px 50px; border-radius:8px; box-shadow:0 0 10px #333;">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        <span style="margin-left:10px;">Loading, please wait...</span>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+$(document).ready(function () {
+    $('#loadingModal').hide();
+    window.addEventListener('pageshow', function () { $('#loadingModal').hide(); });
+    $('#formFilter').submit(function () { $('#loadingModal').show(); });
+    $('#showDataBtn').on('click', function () { $('#loadingModal').show(); });
+
+    // Auto-hide error alert
+    setTimeout(function () {
+        $('.alert-danger').fadeOut(500, function () { $(this).remove(); });
+    }, 1500);
+
+    // When group changes, update area and area detail
+    $('#grpFilter').change(function () {
+        var selectedGroup = $(this).val();
+        var areaDropdown = $('#areaFilter');
+        var areaDIDropdown = $('#areaDIFilter');
+        areaDropdown.empty().append($('<option>', { value: '', text: 'Select Area' }));
+        areaDIDropdown.empty().append($('<option>', { value: '', text: 'Select Area Detail' }));
+        $.ajax({
+            url: '@Url.Action("GetAreaByGroup", "Users")',
+            type: 'GET',
+            data: { groupName: selectedGroup },
+            dataType: 'json',
+            success: function (data) {
+                $.each(data.areaList, function (i, item) {
+                    areaDropdown.append($('<option>', { value: item, text: item }));
+                });
+                $.each(data.areaDIList, function (i, item) {
+                    areaDIDropdown.append($('<option>', { value: item, text: item }));
+                });
+            },
+            error: function () {
+                alert('An error occurred while fetching the data. Please try again.');
+            }
+        });
+    });
+
+    // When area changes, update area detail
+    $('#areaFilter').change(function () {
+        var selectedArea = $(this).val();
+        var selectedGroup = $('#grpFilter').val();
+        var areaDIDropdown = $('#areaDIFilter');
+        areaDIDropdown.empty().append($('<option>', { value: '', text: 'Select Area Detail' }));
+        $.ajax({
+            url: '@Url.Action("GetAreaDetailsByArea", "Users")',
+            type: 'GET',
+            data: { area: selectedArea, groupName: selectedGroup },
+            dataType: 'json',
+            success: function (data) {
+                $.each(data.areaDIList, function (i, item) {
+                    areaDIDropdown.append($('<option>', { value: item, text: item }));
+                });
+            },
+            error: function () {
+                alert('An error occurred while fetching area details. Please try again.');
+            }
+        });
+    });
+
+    // ============================================================
+    // Client-side validation - PUBLIC USER only
+    // ============================================================
+    @if (!isPrivilegedUser)
+    {
+        @:$('#formFilter').on('submit', function (e) {
+        @:    var badge = $('#searchString').val().trim();
+        @:    var from  = $('input[name="from"]').val();
+        @:    var to    = $('input[name="to"]').val();
+        @:    var errors = [];
+        @:    if (!badge) {
+        @:        errors.push('Please scan your Badge ID before submitting.');
+        @:    }
+        @:    if (!from || !to) {
+        @:        errors.push('Please select both From and To dates.');
+        @:    }
+        @:    if (errors.length > 0) {
+        @:        e.preventDefault();
+        @:        $('#loadingModal').hide();
+        @:        alert(errors.join('\n'));
+        @:        return false;
+        @:    }
+        @:});
+    }
+});
+
+// ============================================================
+// SCAN-ONLY - PUBLIC USER only
+// Approach: listen at document level, no dependency on focus
+// ============================================================
+@if (!isPrivilegedUser)
+{
+    @:$(function () {
+    @:    var scanBuffer    = '';
+    @:    var scanTimer     = null;
+    @:    var scanDelay     = 80;
+    @:    var isScanMode    = false;
+    @:
+    @:    var $hidden       = $('#searchString');
+    @:    var $display      = $('#searchStringDisplay');
+    @:
+    @:    // Click on display field → enable scan mode
+    @:    $display.on('click', function () {
+    @:        isScanMode = true;
+    @:        $(this).css('border-color', '#0A8276');
+    @:    });
+    @:
+    @:    // Click anywhere else → disable scan mode
+    @:    $(document).on('click', function (e) {
+    @:        if (!$(e.target).is('#searchStringDisplay')) {
+    @:            isScanMode = false;
+    @:        }
+    @:    });
+    @:
+    @:    // Listen at document level - no focus dependency
+    @:    $(document).on('keydown', function (e) {
+    @:        // Only process when scan mode active
+    @:        if (!isScanMode) return;
+    @:
+    @:        var navKeys = [9, 16, 17, 18, 20, 27, 35, 36, 37, 38, 39, 40, 91, 92];
+    @:        if (navKeys.indexOf(e.keyCode) !== -1) return;
+    @:
+    @:        // Tab → exit scan mode
+    @:        if (e.keyCode === 9) {
+    @:            isScanMode = false;
+    @:            return;
+    @:        }
+    @:
+    @:        // Enter → commit buffer
+    @:        if (e.keyCode === 13) {
+    @:            if (scanBuffer.length > 0) {
+    @:                $hidden.val(scanBuffer);
+    @:                $display.val(scanBuffer);
+    @:                $display.css('border-color', '#28a745');
+    @:                scanBuffer = '';
+    @:                if (scanTimer) { clearTimeout(scanTimer); scanTimer = null; }
+    @:            }
+    @:            e.preventDefault();
+    @:            return;
+    @:        }
+    @:
+    @:        // Backspace / Delete → clear
+    @:        if (e.keyCode === 8 || e.keyCode === 46) {
+    @:            e.preventDefault();
+    @:            scanBuffer = '';
+    @:            $hidden.val('');
+    @:            $display.val('');
+    @:            $display.css('border-color', '#0A8276');
+    @:            if (scanTimer) { clearTimeout(scanTimer); scanTimer = null; }
+    @:            return;
+    @:        }
+    @:
+    @:        // Printable char → buffer
+    @:        if (e.key && e.key.length === 1) {
+    @:            e.preventDefault();
+    @:            scanBuffer += e.key;
+    @:            if (scanTimer) clearTimeout(scanTimer);
+    @:            scanTimer = setTimeout(function () {
+    @:                // Scanner finished → commit to both fields
+    @:                $hidden.val(scanBuffer);
+    @:                $display.val(scanBuffer);
+    @:                $display.css('border-color', '#28a745');
+    @:                scanBuffer = '';
+    @:                scanTimer  = null;
+    @:            }, scanDelay);
+    @:        }
+    @:    });
+    @:
+    @:    // Block paste on display field
+    @:    $display.on('paste', function (e) {
+    @:        e.preventDefault();
+    @:    });
+    @:});
+}
+    </script>
+}
